@@ -1,0 +1,16 @@
+{
+  "name": "novainitia",
+  "description": "A web game",
+  "version": "0.1.0",
+  "homepage": "http://www.nova-initia.com",
+  "repository": {
+    "url": ""
+  },
+  "author": "Stephen Kraushaar <stephen@nova-initia.com>",
+  "directories": {
+    "lib": "."
+  },
+  "engines": {
+    "node": "*"
+  }
+}
