@@ -1,10 +1,6 @@
-var _dbName = 'ni',
-    _dbAddress = '127.0.0.1',
-    _dbPort = 27017;
+var NI = require('./config.js');
 
-$ = require('jquery')
-
-var util = require('util');
+$ = require('jquery');
 
 //Models
 	
@@ -20,7 +16,7 @@ var util = require('util');
 
 //End Models
 
-var db = mongoose.connect(_dbAddress,_dbName,_dbPort);
+var db = mongoose.connect(NI.db.host,NI.db.name,NI.db.port);
 
 //Controllers
 
@@ -33,5 +29,5 @@ var db = mongoose.connect(_dbAddress,_dbName,_dbPort);
 	
 //End Controllers
 
-app.listen(3000);
+app.listen(3001);
 

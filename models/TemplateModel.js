@@ -12,7 +12,7 @@ module.exports = function(mongoose) {
                 var ThisSchema = new Schema({                           //Change 'This' to the object name
                         'id' : ObjectId,                                //id should always look like this
                         'count' : Number                                //properties are 'name' : Type
-                })
+                });
 
                 mongoose.model('This',ThisSchema);                      //Change 'This' to object name. Case Sensitive
 

@@ -1,17 +1,32 @@
-var isCompressed = false;
+var NI = require('../config.js');
+var gzip = NI.web.response.gzip ? require('gzip') : NI.through;
+var $ = require('jquery');
+var headers = [];
 
-if(isCompressed) {
-	var gzip = require('gzip');
-}
+var setHeaders = function(headers, res) {
+    return $.Deferred(function(dfd) {
+        for(var k in headers) {
+            res.header(key, headers[key]);
+        }
+        dfd.resolve();
+    });
+};
+
+var preSend = function (data, res, cb) {
+    return $.Deferred(function(dfd) {
+        if(gzip)
+            headers['Content-Encoding'] = 'gzip';
+        setHeaders(headers, res)
+            .then(gzip(data, function(err, gData) {
+                                cb(gData, res);
+            }));
+        dfd.resolve();
+    });
+};
 
 module.exports.sendData = function(res, data) {
-	//console.log(data);
-	if(isCompressed) {
-		gzip(data, function(err, gData) {
-			res.header('Content-Encoding','gzip');
-			res.send(gData);
-		});
-	} else {
-		res.send(data);
-	}
+    
+    preSend(data,res,function(gData, res) {
+                        res.send(gData);
+    });
 };
