@@ -1,0 +1,577 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://nova-initia_toolbar/skin/nova-initia_toolbar.css" type="text/css"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://nova-initia_toolbar/locale/nova-initia_toolbar_overlay.dtd">
+
+<overlay id="nova_initia_toolbar_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">
+	<script type="application/x-javascript" src="chrome://nova-initia_toolbar/content/nova-initia_algorithms.js" />
+	<script type="application/x-javascript" src="chrome://nova-initia_toolbar/content/nova-initia_json.js" />
+	<script type="application/x-javascript" src="chrome://nova-initia_toolbar/content/nova-initia_jsoc.js" />
+	<script type="application/x-javascript" src="chrome://nova-initia_toolbar/content/nova-initia_toolbar.js" />
+	<script src="chrome://global/content/nsDragAndDrop.js" />
+
+	<toolbox id="navigator-toolbox">
+		<toolbarpalette id="BrowserToolbarPalette">
+			<toolbarbutton id="nova_initia_tool_trap" ondragover="event.stopPropagation(); event.preventDefault();" ondragenter="event.stopPropagation(); event.preventDefault();" ondrop="event.stopPropagation(); event.preventDefault(); NovaInitia.Toolbar.process_toolbutton(this, event.dataTransfer.getData('URL'));" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_trap.tooltiptext;" label="&nova_initia_tool_trap.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_tool_barrel" popup="nova_initia_tool_barrel_panel_popup_top" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_barrel.tooltiptext;" label="&nova_initia_tool_barrel.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_tool_signpost" popup="nova_initia_tool_signpost_panel_popup" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_signpost.tooltiptext;" label="&nova_initia_tool_signpost.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_tool_doorway" popup="nova_initia_tool_doorway_panel_popup" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_doorway.tooltiptext;" label="&nova_initia_tool_doorway.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_tool_spider" ondragover="event.stopPropagation(); event.preventDefault();" ondragenter="event.stopPropagation(); event.preventDefault();" ondrop="event.stopPropagation(); event.preventDefault(); NovaInitia.Toolbar.process_toolbutton(this, event.dataTransfer.getData('URL'));" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_spider.tooltiptext;" label="&nova_initia_tool_spider.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_tool_shield" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_shield.tooltiptext;" label="&nova_initia_tool_shield.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_events" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_events.tooltiptext;" label="&nova_initia_events.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_mail" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_mail.tooltiptext;" label="&nova_initia_mail.label;" type="menu-button" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)">
+				<menupopup>
+					<menuitem id="nova_initia_mail_read" label="Read" />
+					<menuitem id="nova_initia_mail_send" label="Send" oncommand="document.getElementById('nova_initia_mail_panel_popup').openPopup(this,'end_before');event.stopPropagation();"/>
+				</menupopup>
+			</toolbarbutton>
+			<toolbarbutton id="nova_initia_profile" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_profile.tooltiptext;" label="&nova_initia_profile.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+			<toolbarbutton id="nova_initia_logout" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_logout.tooltiptext;" label="&nova_initia_logout.label;" oncommand="NovaInitia.Toolbar.logout()" />
+			<toolbarbutton id="nova_initia_throbber" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_throbber.tooltiptext;" label="&nova_initia_throbber.label;" disabled="true" collapsed="false" hidden="false" />
+			<toolbarbutton id="nova_initia_tool_sg" class="nova_initia_tools_toolbarbutton" tooltiptext="&nova_initia_tool_Sg.tooltiptext;" label="&nova_initia_tool_Sg.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null)" />
+		</toolbarpalette>
+		<toolbar id="nova_initia_tools_toolbar" toolbarname="&nova_initia_tools_toolbar.toolbarname;" accesskey="&nova_initia_tools_toolbar.accesskey;" class="chromeclass-toolbar" context="toolbar-context-menu" hidden="true" collapsed="false" customizable="true" mode="full" defaultset="nova_initia_tool_trap,nova_initia_tool_barrel,nova_initia_tool_signpost,nova_initia_tool_doorway,nova_initia_tool_spider,nova_initia_tool_shield,nova_initia_events,nova_initia_mail,nova_initia_profile,nova_intia_logout,spring,nova_initia_throbber,spring,nova_initia_tool_sg" >
+		</toolbar>
+		<toolbar id="nova_initia_login_toolbar" toolbarname="&nova_initia_login_toolbar.toolbarname;" class="chromeclass-toolbar" context="toolbar-context-menu" hidden="true" collapsed="false" customizable="false">
+			<toolbarbutton id="nova_initia_login_toolbar_login_button" tooltiptext="&nova_initia_login_toolbar_login_button.tooltiptext;" label="&nova_initia_login_toolbar_login_button.label;" oncommand="NovaInitia.Toolbar.process_login(this)" />
+			<toolbarseparator />
+			<toolbarbutton id="nova_initia_login_toolbar_register_button" tooltiptext="&nova_initia_login_toolbar_register_button.tooltiptext;" label="&nova_initia_login_toolbar_register_button.label;" oncommand="NovaInitia.Toolbar.openTab(null,true);" />
+			<toolbarspring />
+			<toolbarbutton id="nova_initia_login_toolbar_throbber" disabled="true" collapsed="true" />
+			<toolbarspring />
+		</toolbar>
+	</toolbox>
+
+	<popupset id="mainPopupSet">
+		<panel id="nova_initia_barrel_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_barrel_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/barrel_found.jpg" top="0" left="0"/>
+				<vbox class="nova_initia_panel_text" id="nova_initia_barrel_panel_text" top="130" left="0">
+					<label id="nova_initia_barrel_panel_label" value=""/>
+					<label id="nova_initia_barrel_panel_title_0" class="nova_initia_barrel_panel_title" value="" />
+					<label id="nova_initia_barrel_panel_title_1" class="nova_initia_barrel_panel_title" value="" />
+					<label id="nova_initia_barrel_panel_title_2" class="nova_initia_barrel_panel_title" value="" />
+				</vbox>
+				<stack class="nova_initia_panel_buttons" id="nova_initia_barrel_panel_buttons" top="160" left="0">
+					<button id="nova_initia_barrel_panel_profile_button" class="chain" top="-86" left="0" label="&lt;&lt; Profile" />
+					<button id="nova_initia_barrel_panel_button" class="open" top="0" left="0" tooltiptext="&nova_initia_barrel_panel_button.tooltiptext;"/>
+					<button class="dismiss" top="0" left="120" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_barrel_panel','',true)"/>
+				</stack>
+			</stack>
+		</panel>
+
+		<panel id="nova_initia_signpost_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_signpost_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/signpost_set.jpg" top="0" left="0" />
+				<hbox align="center" top="150" left="0">
+					<vbox class="nova_initia_panel_text" id="nova_initia_signpost_panel_text">
+						<description id="nova_initia_signpost_panel_title_label" value=""/>
+						<label id="nova_initia_signpost_panel_user_label" value=""/>
+						<!--<textbox id="nova_initia_signpost_panel_comment_textbox" disabled="true" multiline="true" value=""/>-->
+					</vbox>
+				</hbox>
+				<hbox align="center" class="nova_initia_panel_buttons" id="nova_initia_signpost_panel_buttons" top="160" left="0">
+					<button id="nova_initia_signpost_panel_goto_start_button" class="tostart" label="&nova_initia_goto_start.label;"/>
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_signpost_panel','',true)"/>
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tour_start_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image src="chrome://nova-initia_toolbar/skin/images/overlays/signpost_set.jpg" top="0" left="0" />
+				<hbox align="center" top="0" left="0">
+					<vbox class="nova_initia_panel_text" id="nova_initia_tour_start_panel_summary">
+						<textbox multiline="true" size="38" rows="9" maxlength="342" id="nova_initia_tour_start_panel_comment_textbox" class="nova_initia_panel_textbox" />
+						<label id="nova_initia_tour_start_panel_title_label" value=""/>
+					</vbox>
+				</hbox>
+				<hbox align="center" class="nova_initia_panel_buttons" id="nova_initia_tour_start_panel_buttons"  top="160" left="0">
+					<button id="nova_initia_tour_start_panel_start_tour_button" class="start" label="&nova_initia_start_tour.label;"/>
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_tour_start_panel')"/>
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tour_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image src="chrome://nova-initia_toolbar/skin/images/overlays/signpost_set.jpg" top="0" left="0" />
+				<hbox align="center" top="0" left="0">
+					<vbox class="nova_initia_panel_text" id="nova_initia_tour_panel_summary">
+						<textbox multiline="true" size="38" rows="9" maxlength="342" id="nova_initia_tour_panel_comment_textbox" class="nova_initia_panel_textbox"/>
+						<label id="nova_initia_tour_panel_title_label" value=""/>
+						<label id="nova_initia_tour_panel_hidden_label" value="" hidden="true"/>
+					</vbox>
+				</hbox>
+				<hbox align="center" class="nova_initia_panel_buttons" id="nova_initia_tour_panel_buttons" top="115" left="0">
+					<stack>
+					<vbox top="25" left="0">
+						<label id="nova_initia_tour_panel_back_label" value=" "/>
+						<button class="chain black" id="nova_initia_tour_panel_back_button" label="&nova_initia_panels_back_button.value;" oncommand="NovaInitia.Toolbar.tour_go_back()"/>
+					</vbox>
+					<vbox top="40" left="60">
+						<label id="nova_initia_tour_panel_complete_label" value=" " hidden="true"/>
+						<button class="chain black" id="nova_initia_tour_panel_complete_button" label="&nova_initia_panels_complete_button.value;" hidden="true"/>
+					</vbox>
+					<vbox top="60" left="-3" align="center">
+						<button id="nova_initia_tour_panel_A_button" label="&nova_initia_tour_panel_A_button.label;"/>
+					</vbox>
+					<vbox top="60" left="120" align="center">
+						<button id="nova_initia_tour_panel_B_button" label="&nova_initia_tour_panel_B_button.label;"/>
+					</vbox>
+					<vbox top="0" left="230" align="center">
+						<button id="nova_initia_tour_panel_C_button" label="&nova_initia_tour_panel_C_button.label;"/>
+					</vbox>
+					<vbox top="-100" left="230" align="center">
+						<button id="nova_initia_tour_panel_D_button" label="&nova_initia_tour_panel_D_button.label;"/>
+					</vbox>
+					<vbox top="25" left="150">
+						<label id="nova_initia_tour_panel_dismiss_label" value=" "/>
+						<button class="chain black" label="Leave Tour" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_tour_panel')"/>
+					</vbox>
+					</stack>
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_doorway_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_doorway_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/doorway_set.png" top="0" left="0" />
+				<hbox align="center" top="145" left="0" >
+					<vbox class="nova_initia_panel_text" id="nova_initia_doorway_panel_text">
+						<label id="nova_initia_doorway_panel_label" value=""/>
+						<label id="nova_initia_doorway_panel_hint_label_0" class="nova_initia_doorway_panel_hint_label" value="" />
+						<label id="nova_initia_doorway_panel_hint_label_1" class="nova_initia_doorway_panel_hint_label" value="" />
+						<label id="nova_initia_doorway_panel_hint_label_2" class="nova_initia_doorway_panel_hint_label" value="" />
+						<label id="nova_initia_doorway_panel_hidden_label" value="" hidden="true"/>
+					</vbox>
+				</hbox>
+				<hbox align="center" class="nova_initia_panel_buttons" id="nova_initia_doorway_panel_buttons" top="148" left="0">
+					<stack>
+							<button id="nova_initia_doorway_panel_prev_button" top="0" left="0" class="previous chain" label="Previous" oncommand="NovaInitia.Toolbar.doorway_carousel_prev()" disabled="true"/>
+							<button id="nova_initia_doorway_panel_chain_button" class="chain" top="-100" left="0" label="&lt;&lt; Goto chain start" />
+							<button id="nova_initia_doorway_panel_profile_button" class="chain" top="-70" left="0" label="&lt;&lt; Profile" />
+							<button id="nova_initia_doorway_panel_next_button" top="0" left="158" class="next chain" label="Next" oncommand="NovaInitia.Toolbar.doorway_carousel_next()" disabled="true"/>
+							<button id="nova_initia_doorway_panel_button" top="26" left="0" class="through" />
+							<button id="nova_initia_doorway_panel_dismiss_button" top="26" left="120" class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_doorway_panel')"/>
+					</stack>
+				</hbox>
+				<hbox class="nova_initia_door_count" top="148" left="190">
+					<vbox class="nova_initia_panel_text">
+						<description align="center" class="count" id="nova_initia_doorway_panel_count" value="1 of " />
+					</vbox>
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_doorway_panel_end" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_doorway_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/doorway_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<hbox>
+						<label id="nova_initia_doorway_panel_end_label" value=""/>
+					</hbox>
+					<hbox>
+						<label id="nova_initia_doorway_panel_end_comment_label" value="&nova_initia_doorway_panel_end_comment_label.value;"/>
+						<textbox id="nova_initia_doorway_panel_end_comment_textbox" class="nova_initia_panel_textbox" disabled="true" multiline="true" value=""/>
+					</hbox>
+					<hbox class="nova_initia_panel_buttons">
+						<button class="rateup" id="nova_initia_doorway_panel_end_button" oncommand=""/>
+						<button class="ratedown" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_doorway_panel_end')"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_trap_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_trap_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/trap_triggered.png" top="0" left="0" />
+				<vbox class="nova_initia_panel_text" id="nova_initia_trap_panel_text" top="150" left="0">
+					<label id="nova_initia_trap_panel_label" value=""/>
+					<description id="nova_initia_trap_panel_description"/>
+				</vbox>
+				<hbox class="nova_initia_panel_buttons" id="nova_initia_trap_panel_buttons" top="160" left="0">
+					<button class="yeah" oncommand="NovaInitia.Toolbar.new_message('#nova_initia_trap_panel_label')" />
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_trap_panel')" />
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_shield_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_shield_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/shield_triggered.png" top="0" left="0" />
+				<vbox class="nova_initia_panel_text" id="nova_initia_shield_panel_text" top="150" left="0">
+					<label id="nova_initia_shield_panel_label" value=""/>
+					<description id="nova_initia_shield_panel_description"/>
+				</vbox>
+				<hbox class="nova_initia_panel_buttons" id="nova_initia_shield_panel_buttons" top="160" left="0">
+					<button class="yeah" oncommand="NovaInitia.Toolbar.new_message('#nova_initia_shield_panel_label')" />
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_shield_panel')" />
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_fail_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_fail_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/spider_failed.jpg" top="0" left="0" />
+				<vbox class="nova_initia_panel_text" id="nova_initia_fail_panel_text" top="150" left="0">
+					<label id="nova_initia_fail_panel_label" value="Tool Failed"/>
+					<description id="nova_initia_fail_panel_description"/>
+				</vbox>
+				<hbox class="nova_initia_panel_buttons" id="nova_initia_fail_panel_buttons" top="160" left="0">
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_fail_panel')" />
+				</hbox>
+			</stack>
+		</panel>
+
+		<panel id="nova_initia_random_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_random_panel_image" src="chrome://nova-initia_toolbar/skin/images/overlays/random_darkness.jpg" top="0" left="0" />
+				<vbox class="nova_initia_panel_text" id="nova_initia_random_panel_text" top="150" left="0">
+					<label id="nova_initia_random_panel_label" value=""/>
+					<description id="nova_initia_fail_panel_description"/>
+				</vbox>
+				<hbox class="nova_initia_panel_buttons" id="nova_initia_random_panel_buttons" top="160" left="0">
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_random_panel')" />
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_spider_panel" class="nova_initia_panel_class" noautofocus="true" noautohide="true">
+			<stack>
+				<image id="nova_initia_spider_panel_image" 	src="chrome://nova-initia_toolbar/skin/images/overlays/spider_set.jpg" top="0" left="0" />
+				<vbox class="nova_initia_panel_text" id="nova_initia_spider_panel_text" top="150" left="0">
+					<label id="nova_initia_spider_panel_label" value="" />
+					<description id="nova_initia_spider_panel_description" />
+				</vbox>
+				<hbox class="nova_initia_panel_buttons" id="nova_initia_spider_panel_buttons" top="160" left="0">
+					<button class="yeah" oncommand="NovaInitia.Toolbar.new_message('#nova_initia_spider_panel_label')"/>
+					<button class="dismiss" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_spider_panel')"/>
+				</hbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tool_doorway_panel_popup" level="top" class="nova_initia_panel_class_top" position="after_start" onpopupshown="NovaInitia.Toolbar.try_popup(document.getElementById('nova_initia_tool_doorway_panel_popup_stash_button'),document.getElementById('nova_initia_tool_doorway_panel_popup'))">
+			<stack>
+				<image id="nova_initia_doorway_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/doorway_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<label align="center" id="nova_initia_tool_doorway_panel_popup_label" class="popupTitle" value="&nova_initia_tool_doorway_panel_popup_label.value;"/>
+					<grid>
+						<columns>
+							<column />
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_doorway_panel_popup_URL.label;"/>
+								<textbox id="nova_initia_tool_doorway_panel_popup_URL" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_doorway_panel_popup_URL.tooltiptext;" emptytext="&nova_initia_tool_doorway_panel_popup_URL.emptytext;" value=""/>
+								<image id="nova_initia_tool_doorway_panel_popup_URL_image" class="nova_initia_panel_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_doorway_panel_popup_hint.label;"/>
+								<textbox id="nova_initia_tool_doorway_panel_popup_hint" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_doorway_panel_popup_hint.tooltiptext;" maxlength="114" value=""/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_doorway_panel_popup_comment.label;"/>
+								<textbox id="nova_initia_tool_doorway_panel_popup_comment" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_doorway_panel_popup_comment.tooltiptext;" multiline="true" value=""/>
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<label value="&nova_initia_tool_doorway_panel_popup_add_to_chain.label;"/>
+						<checkbox id="nova_initia_tool_doorway_panel_popup_add_to_chain" class="nova_initia_panel_checkbox" tooltiptext="&nova_initia_tool_doorway_panel_popup_add_to_chain.tooltiptext;" checked="false" disabled="true"/>
+					</hbox>
+					<hbox>
+						<label value="&nova_initia_tool_doorway_panel_popup_nsfw.label;"/>
+						<checkbox id="nova_initia_tool_doorway_panel_popup_nsfw" class="nova_initia_panel_checkbox" tooltiptext="&nova_initia_tool_doorway_panel_popup_nsfw.tooltiptext;" checked="false"/>
+					</hbox>
+					<hbox class="nova_initia_panel_buttons">
+						<button class="small" id="nova_initia_tool_doorway_panel_popup_stash_button" label="&nova_initia_tool_doorway_panel_popup_stash_button.label;" oncommand="NovaInitia.Toolbar.open_doorway();"/>
+						<button class="small" id="nova_initia_tool_doorway_panel_popup_dismiss_button" label="&nova_initia_cancel.label;" oncommand="document.getElementById('nova_initia_tool_doorway_panel_popup').hidePopup();"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tool_signpost_panel_popup" level="top" class="nova_initia_panel_class_top" position="after_start">
+			<stack>
+				<image id="nova_initia_signpost_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/signpost_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<label align="center" id="nova_initia_tool_signpost_panel_popup_label" class="popupTitle" value="&nova_initia_tool_signpost_panel_popup_label.value;"/>
+					<grid>
+						<columns>
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_signpost_panel_popup_title.label;"/>
+								<textbox id="nova_initia_tool_signpost_panel_popup_title" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_signpost_panel_popup_title.tooltiptext;" value=""/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_signpost_panel_popup_comment.label;"/>
+								<textbox id="nova_initia_tool_signpost_panel_popup_comment" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_signpost_panel_popup_comment.tooltiptext;" multiline="true" value=""/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_signpost_panel_popup_nsfw.label;"/>
+								<checkbox id="nova_initia_tool_signpost_panel_popup_nsfw" class="nova_initia_panel_checkbox" tooltiptext="&nova_initia_tool_signpost_panel_popup_nsfw.tooltiptext;" checked="false"/>
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<button class="small" id="nova_initia_tool_signpost_panel_popup_placed_button" label="&nova_initia_tool_signpost_panel_popup_placed_button.label;" oncommand="NovaInitia.Toolbar.place_signpost();"/>
+						<button class="small" label="&nova_initia_cancel.label;" oncommand="document.getElementById('nova_initia_tool_signpost_panel_popup').hidePopup();"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_mail_panel_popup" level="top" class="nova_initia_panel_class_top" position="after_start">
+			<stack>
+				<image id="nova_initia_mail_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/signpost_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<label align="center" id="nova_initia_mail_panel_popup_label" class="popupTitle" value="&nova_initia_mail_panel_popup_label.value;"/>
+					<grid>
+						<columns>
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_mail_receiver.label;"/>
+								<textbox id="nova_initia_mail_receiver" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_mail_receiver.tooltiptext;" value=""/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_mail_subject.label;"/>
+								<textbox id="nova_initia_mail_subject" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_mail_subject.tooltiptext;" value=""/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_mail_body.label;"/>
+								<textbox id="nova_initia_mail_body" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_mail_body.tooltiptext;" multiline="true" value=""/>
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<button class="small" id="nova_initia_mail_send_button" label="&nova_initia_mail_send_button.label;" oncommand="NovaInitia.Toolbar.process_toolbutton(this,null);"/>
+						<button class="small" label="&nova_initia_cancel.label;" oncommand="document.getElementById('nova_initia_mail_panel_popup').hidePopup();"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tool_barrel_panel_popup" level="top" class="nova_initia_panel_class_top" position="after_start" onpopupshown="NovaInitia.Toolbar.try_popup(document.getElementById('nova_initia_tool_barrel_panel_popup_stash_button'),document.getElementById('nova_initia_tool_barrel_panel_popup'))">
+			<stack>
+				<image id="nova_initia_barrel_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/barrel_place.png" top="0" left="0"/>
+				<vbox align="center" id="nova_initia_tool_barrel_panel_popup_vbox" top="0" left="0">
+					<label id="nova_initia_tool_barrel_panel_popup_label" class="popupTitle" value="&nova_initia_tool_barrel_panel_popup_label.value;"/>
+					<grid>
+						<columns>
+							<column />
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row hidden="true">
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_sg.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_sg" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_sg.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_sg_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_traps.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_traps" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_traps.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_traps_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_barrels.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_barrels" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_barrels.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_barrels_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_spiders.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_spiders" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_spiders.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_spiders_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_shields.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_shields" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_shields.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_shields_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_doorways.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_doorways" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_doorways.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_doorways_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_signposts.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_signposts" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_signposts.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_signposts_image" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_message.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_message" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_message.tooltiptext;" emptytext="&nova_initia_tool_barrel_panel_popup_message.emptytext;" multiline="true" maxlength="512" />
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<button id="nova_initia_tool_barrel_panel_popup_stash_button" label="&nova_initia_tool_barrel_panel_popup_stash_button.label;" oncommand="NovaInitia.Toolbar.stash_barrel();"/>
+						<button class="close" label="&nova_initia_cancel.label;" oncommand="document.getElementById('nova_initia_tool_barrel_panel_popup').hidePopup();"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_tool_barrel_panel_popup_top" level="top" class="nova_initia_panel_class_top" position="after_start" onpopupshown="NovaInitia.Toolbar.try_popup(document.getElementById('nova_initia_tool_barrel_panel_popup_stash_button_top'),document.getElementById('nova_initia_tool_barrel_panel_popup_top'))">
+			<stack>
+				<image id="nova_initia_barrel_panel_popup_top_image" src="chrome://nova-initia_toolbar/skin/images/overlays/barrel_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<grid>
+						<columns>
+							<column />
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_sg.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_sg_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_sg.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_sg_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_traps.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_traps_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_traps.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_traps_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_barrels.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_barrels_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_barrels.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_barrels_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_spiders.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_spiders_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_spiders.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_spiders_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_shields.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_shields_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_shields.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_shields_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_doorways.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_doorways_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_doorways.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_doorways_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_signposts.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_signposts_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_signposts.tooltiptext;" value="0"/>
+								<image class="nova_initia_panel_image" id="nova_initia_tool_barrel_panel_popup_signposts_image_top" src="chrome://nova-initia_toolbar/skin/images/icons/arrow.PNG" hidden="true"/>
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_message.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_message_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_message.tooltiptext;" emptytext="&nova_initia_tool_barrel_panel_popup_message.emptytext;" multiline="true"/>					
+							</row>
+							<row>
+								<label class="nova_initia_panel_label" value="&nova_initia_tool_barrel_panel_popup_label.label;"/>
+								<textbox id="nova_initia_tool_barrel_panel_popup_label_top" class="nova_initia_panel_textbox" tooltiptext="&nova_initia_tool_barrel_panel_popup_label.tooltiptext;" emptytext="&nova_initia_tool_barrel_panel_popup_label.emptytext;" maxlength="114"/>					
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<button class="small" id="nova_initia_tool_barrel_panel_popup_stash_button_top" label="&nova_initia_tool_barrel_panel_popup_stash_button.label;" oncommand="NovaInitia.Toolbar.stash_barrel();" />
+						<button class="small" label="Dismiss" oncommand="document.getElementById('nova_initia_tool_barrel_panel_popup_top').hidePopup();"/>
+					</hbox>
+
+				</vbox>
+			</stack>
+		</panel>
+
+		<panel id="nova_initia_tool_barrel_loot_panel_popup" class="nova_initia_panel_class_top" noautohide="true">
+			<stack>
+				<image id="nova_initia_barrel_loot_panel_popup_image" src="chrome://nova-initia_toolbar/skin/images/overlays/barrel_place.png" top="0" left="0"/>
+				<vbox align="center" top="0" left="0">
+					<label id="nova_initia_tool_barrel_loot_panel_popup_label" class="popupTitle" value="&nova_initia_tool_barrel_loot_panel_popup_label.value;"/>
+					<grid>
+						<columns>
+							<column />
+							<column />
+						</columns>
+						<rows>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_sg.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_sg" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_sg.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_traps.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_traps" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_traps.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_barrels.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_barrels" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_barrels.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_spiders.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_spiders" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_spiders.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_shields.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_shields" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_shields.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_doorways.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_doorways" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_doorways.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_signposts.label;"/>
+								<label id="nova_initia_tool_barrel_loot_panel_popup_signposts" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_signposts.tooltiptext;" value="0"/>
+							</row>
+							<row>
+								<label value="&nova_initia_tool_barrel_panel_popup_message.label;"/>
+								<textbox id="nova_initia_tool_barrel_loot_panel_popup_message" tooltiptext="&nova_initia_tool_barrel_loot_panel_popup_message.tooltiptext;" value="The Message"  multiline="true" readonly="true" maxlength="512"/>
+							</row>
+						</rows>
+					</grid>
+					<hbox>
+						<button id="nova_initia_tool_barrel_loot_panel_popup_thanks_button" label="Thanks!" oncommand="NovaInitia.Toolbar.new_message('#nova_initia_barrel_panel_label'); document.getElementById('nova_initia_tool_barrel_loot_panel_popup').hidePopup();"/>
+						<button class="close" label="&nova_initia_close.label;" oncommand="NovaInitia.Toolbar.dismiss_panel('nova_initia_tool_barrel_loot_panel_popup');"/>
+					</hbox>
+				</vbox>
+			</stack>
+		</panel>
+		
+		<panel id="nova_initia_about_panel" position="after_start">
+			<vbox>
+				<label id="nova_initia_about_panel_label_1" value="&nova_initia_help_menu.label;" />
+				<label id="nova_initia_about_panel_label_2" value="" />
+				<button class="dismiss" oncommand="document.getElementById('nova_initia_about_panel').hidePopup();"/>
+			</vbox>
+		</panel>
+
+	</popupset>
+	
+	<menupopup id="menu_ToolsPopup">
+		<menu id="menu_nova_initia_tools_menu" insertafter="devToolsSeparator" label="&nova_initia_tools_menu.label;">
+			<menupopup id="menu_nova_initia_tools_menupopup">
+				<menuitem id="nova_initia_tools_menuitem_logout" hidden="true" label="&nova_initia_tools_menupopup_logout.label;" oncommand="NovaInitia.Toolbar.logout(true)" />
+				<menuitem id="nova_initia_tools_menuitem_login" hidden="false" label="&nova_initia_tools_menupopup_login.label;" oncommand="NovaInitia.Toolbar.process_login(this)" />
+				<menuitem id="nova_initia_tools_menuitem_clear_all" hidden="false" label="&nova_initia_tools_menuitem_clear_all.label;" oncommand="NovaInitia.Toolbar.clear_logins()" />
+				<menuitem id="nova_initia_tools_menuitem_sync_user" hidden="false" label="&nova_initia_tools_menuitem_sync_user.label;" oncommand="NovaInitia.Toolbar.sync_user()" />
+				<menu id="nova_initia_tools_menu_user_submenu" hidden="true" label="&nova_initia_tools_menu_user_submenu.label;">
+					<menupopup id="menu_nova_initia_tools_menu_user_submenupopup">
+						<menuseparator id="nova_initia_user_menu_separator" />
+						<menuitem id="nova_initia_tools_menu_user_submenu_new" hidden="false" label="&nova_initia_tools_menu_user_submenu_new.label;" oncommand="NovaInitia.Toolbar.process_login(this,true,false,true)" />
+					</menupopup>
+				</menu>
+			</menupopup>
+		</menu>
+	</menupopup>
+	<menupopup id="menu_HelpPopup">
+		<menu id="menu_nova_initia_help_menu" insertbefore="updateSeparator" label="&nova_initia_help_menu.label;">
+			<menupopup id="menu_nova_initia_help_menupopup">
+				<menuitem id="nova_initia_help_menuitem_help" hidden="false" tooltiptext="&nova_initia_help_menuitem_help.tooltiptext;" label="&nova_initia_help_menuitem_help.label;" oncommand="alert('Help!')" />
+				<menuseparator id="nova_initia_help_menu_separator" />
+				<menuitem id="nova_initia_help_menuitem_about" hidden="false" tooltiptext="&nova_initia_help_menuitem_about.tooltiptext;" label="&nova_initia_help_menuitem_about.label;" oncommand="NovaInitia.Toolbar.show_about_panel(document.getElementById('browser'),document.getElementById('nova_initia_about_panel'),document.getElementById('nova_initia_about_panel_label_2'));" />
+			</menupopup>
+		</menu>
+	</menupopup>
+</overlay>

@@ -147,4 +147,4 @@ module.exports = function(mongoose) {
 	} //End If
 	
 	return mongoose;
-}; //End modules.exports
+};

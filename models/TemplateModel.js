@@ -10,7 +10,7 @@ module.exports = function(mongoose) {
                 //End Shorthand Definitions
 
                 var ThisSchema = new Schema({                           //Change 'This' to the object name
-                        'id' : ObjectId,                                //id should always look like this
+                        '_id' : ObjectId,                                //id should always look like this
                         'count' : Number                                //properties are 'name' : Type
                 });
 

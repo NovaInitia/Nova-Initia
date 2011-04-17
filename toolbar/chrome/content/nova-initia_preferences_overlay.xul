@@ -1,0 +1,225 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://nova-initia_toolbar/skin/nova-initia_preferences.css" type="text/css"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://nova-initia_toolbar/locale/nova-initia_preferences_overlay.dtd">
+
+<overlay id="nova_initia_preferences_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">
+	<script type="application/x-javascript" src="chrome://nova-initia_toolbar/content/nova-initia_preferences.js" />
+
+	<prefwindow id="BrowserPreferences">
+		<prefpane id="nova_initia_preferences_overlay_prefpane" label="&nova_initia_prefs_prefpane.label;" onpaneload="myNova_initiaPref_Sys.set_logins()" image="chrome://nova-initia_toolbar/skin/images/icons/icon.PNG">
+			<preferences>
+				<preference id="nova_initia_prefs_debug" name="extensions.nova-initia.debug" type="bool" />
+				<preference id="nova_initia_prefs_server_url" name="extensions.nova-initia.server_url" type="string" />
+				<preference id="nova_initia_prefs_url_prefix" name="extensions.nova-initia.url_prefix" type="string" />
+				
+				<preference id="nova_initia_prefs_filter_nsfw_all" name="extensions.nova-initia.filter_nsfw_all" type="bool" />
+				<preference id="nova_initia_prefs_hotkeys_trap_pref" name="extensions.nova-initia.hotkey_trap" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_barrel_pref" name="extensions.nova-initia.hotkey_barrel" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_signpost_pref" name="extensions.nova-initia.hotkey_signpost" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_doorway_pref" name="extensions.nova-initia.hotkey_doorway" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_spider_pref" name="extensions.nova-initia.hotkey_spider" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_shield_pref" name="extensions.nova-initia.hotkey_shield" type="string" />
+				<preference id="nova_initia_prefs_hotkeys_modifiers_ctrl_pref" name="extensions.nova-initia.hotkey_modifier_ctrl" type="bool" />
+				<preference id="nova_initia_prefs_hotkeys_modifiers_alt_pref" name="extensions.nova-initia.hotkey_modifier_alt" type="bool" />
+				<preference id="nova_initia_prefs_hotkeys_modifiers_shift_pref" name="extensions.nova-initia.hotkey_modifier_shift" type="bool" />
+
+				<preference id="nova_initia_prefs_loginbar_at_startup" name="extensions.nova-initia.login_toolbar_visible_at_startup" type="bool" />
+				<preference id="nova_initia_prefs_stash_barrel_button_placement_bottom" name="extensions.nova-initia.stash_barrel_button_placement_bottom" type="bool" />
+				<preference id="nova_initia_prefs_toolbar_text_orientation_vertical" name="extensions.nova-initia.toolbar_text_orientation_vertical" type="bool" />
+
+				<preference id="nova_initia_prefs_login_saved" name="extensions.nova-initia.login_saved" type="bool" />
+			</preferences>
+			<tabbox>
+				<tabs>
+					<tab label="&nova_initia_prefs_tab_user.label;" />
+					<tab label="&nova_initia_prefs_tab_filters.label;" />
+					<tab label="&nova_initia_prefs_tab_hotkeys.label;" />
+					<tab label="&nova_initia_prefs_tab_appearance.label;" />
+					<tab label="&nova_initia_prefs_tab_admin.label;" />
+					<tab label="&nova_initia_prefs_tab_login_management.label;" />
+				</tabs>
+				<tabpanels>
+					<tabpanel id="nova_initia_preferences_user" orient="vertical">
+						<grid>
+							<columns>
+								<column />
+								<column />
+							</columns>
+							<rows>
+								<label id="nova_initia_prefs_user_username_label" />
+								<row>
+									<image id="nova_initia_prefs_user_image" src="chrome://nova-initia_toolbar/skin/images/icons/unknownmid.PNG" width="100" height="100" onload="" validate="never"/>
+								</row>
+								<row>
+									<label>&nova_initia_prefs_tagline.label;</label>
+									<textbox id="nova_initia_prefs_user_tagline" />
+								</row>
+								<row>
+									<label>&nova_initia_prefs_class.label;</label>
+									<menulist id="nova_initia_prefs_user_class_menulist">
+										<menupopup id="nova_initia_prefs_user_class_menupopup">
+											<menuitem id="nova_initia_prefs_user_class_refugee" label="&nova_initia_prefs_class_refugee.label;" value="0" />
+											<menuitem id="nova_initia_prefs_user_class_giver" label="&nova_initia_prefs_class_giver.label;" value="1" />
+											<menuitem id="nova_initia_prefs_user_class_guardian" label="&nova_initia_prefs_class_guardian.label;" value="2" />
+											<menuitem id="nova_initia_prefs_user_class_guide" label="&nova_initia_prefs_class_guide.label;" value="3" />
+										</menupopup>
+									</menulist>
+								</row>
+								<row>
+									<label>&nova_initia_prefs_location.label;</label>
+									<textbox id="nova_initia_prefs_user_location_textbox" />
+								</row>
+								<row>
+									<label>&nova_initia_prefs_email.label;</label>
+									<textbox id="nova_initia_prefs_user_email_textbox" />
+								</row>
+								<row>
+									<button id="nova_initia_prefs_user_submit_button" label="&nova_initia_prefs_user_submit_button.label;" oncommand="myNova_initiaPref_Sys.update_profile()" />
+								</row>
+								<!--
+								<row>
+									<label>&nova_initia_prefs_minrate_tour.label;</label>
+									<menulist>
+										<menupopup>
+											<menuitem label="0" value="1"/>
+											<menuitem label="1" value="2"/>
+											<menuitem label="2" value="3"/>
+											<menuitem label="3" value="4"/>
+											<menuitem label="4" value="5"/>
+											<menuitem label="5" value="6"/>
+										</menupopup>
+									</menulist>
+								</row>
+								<row>
+									<label>&nova_initia_prefs_minrate_door.label;</label>
+									<menulist>
+										<menupopup>
+											<menuitem label="0" value="1"/>
+											<menuitem label="1" value="2"/>
+											<menuitem label="2" value="3"/>
+											<menuitem label="3" value="4"/>
+											<menuitem label="4" value="5"/>
+											<menuitem label="5" value="6"/>
+										</menupopup>
+									</menulist>
+								</row>
+								-->
+							</rows>
+						</grid>
+					</tabpanel>
+					<tabpanel id="nova_initia_preferences_filters" orient="vertical">
+						<checkbox preference="nova_initia_prefs_filter_nsfw_all" label="&nova_initia_prefs_nsfw_all.label;"/>
+						<checkbox label="&nova_initia_prefs_nsfw_sound.label;"/>
+						<checkbox label="&nova_initia_prefs_nsfw_nude.label;"/>
+						<checkbox label="&nova_initia_prefs_nsfw_curses.label;"/>
+						<checkbox label="&nova_initia_prefs_nsfw_violence.label;"/>
+						<checkbox label="&nova_initia_prefs_toolfilter_door.label;"/>
+						<checkbox label="&nova_initia_prefs_toolfilter_sign.label;"/>
+						<checkbox label="&nova_initia_prefs_toolfilter_barrel.label;"/>
+						<checkbox label="&nova_initia_prefs_toolfilter_tour.label;"/>
+						<label>&nova_initia_prefs_spam_ignore.label;</label>
+						<grid>
+							<columns>
+								<column />
+								<column/>
+							</columns>
+							<rows>
+								<row>
+									<listbox rows="5" style="overflow: auto;"></listbox>
+									<vbox>
+										<button label="+" oncommand="" />
+										<button label="-" oncommand="" />
+									</vbox>
+								</row>
+							</rows>
+						</grid>
+					</tabpanel>
+					<tabpanel id="nova_initia_preferences_hotkeys" orient="vertical">
+						<vbox>
+							<groupbox id="nova_initia_preferences_hotkeys_modifiers_ctrl_groupbox">
+								<caption label="&nova_initia_preferences_hotkeys_modifiers_groupbox.label;" />
+								<checkbox preference="nova_initia_prefs_hotkeys_modifiers_ctrl_pref" label="&nova_initia_prefs_hotkeys_modifiers_ctrl_pref.label;"/>
+								<checkbox preference="nova_initia_prefs_hotkeys_modifiers_alt_pref" label="&nova_initia_prefs_hotkeys_modifiers_alt_pref.label;"/>
+								<checkbox preference="nova_initia_prefs_hotkeys_modifiers_shift_pref" label="&nova_initia_prefs_hotkeys_modifiers_shift_pref.label;"/>
+							</groupbox>
+							<groupbox id="nova_initia_preferences_hotkeys_groupbox">
+								<caption label="&nova_initia_preferences_hotkeys_groupbox.label;" />
+								<grid>
+									<columns>
+										<column />
+										<column />
+									</columns>
+									<rows>
+										<row>
+											<label>&nova_initia_prefs_hotkey_trap.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_trap_pref" />
+										</row>
+										<row>
+											<label>&nova_initia_prefs_hotkey_barrel.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_barrel_pref" />
+										</row>
+										<row>
+											<label>&nova_initia_prefs_hotkey_signpost.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_signpost_pref" />
+										</row>
+										<row>
+											<label>&nova_initia_prefs_hotkey_doorway.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_doorway_pref" />
+										</row>
+										<row>
+											<label>&nova_initia_prefs_hotkey_spider.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_spider_pref" />
+										</row>
+										<row>
+											<label>&nova_initia_prefs_hotkey_shield.label;</label>
+											<textbox preference="nova_initia_prefs_hotkeys_shield_pref" />
+										</row>
+									</rows>
+								</grid>
+							</groupbox>
+						</vbox>
+					</tabpanel>
+					<tabpanel id="nova_initia_preferences_appearance" orient="vertical">
+						<checkbox preference="nova_initia_prefs_loginbar_at_startup" label="&nova_initia_prefs_loginbar_at_startup.label;"/>
+						<checkbox preference="nova_initia_prefs_stash_barrel_button_placement_bottom" label="&nova_initia_prefs_stash_barrel_button_placement_bottom.label;"/>
+						<checkbox preference="nova_initia_prefs_toolbar_text_orientation_vertical" label="&nova_initia_prefs_toolbar_text_orientation_vertical.label;"/>
+					</tabpanel>
+					<tabpanel id="nova_initia_preferences_admin" orient="vertical">
+						<checkbox preference="nova_initia_prefs_debug" label="&nova_initia_prefs_debug.label;"/>
+						<grid>
+							<columns>
+								<column />
+								<column />
+							</columns>
+							<rows>
+								<row>
+									<label>&nova_initia_prefs_server_url.label;</label>
+									<textbox preference="nova_initia_prefs_server_url" />
+								</row>
+								<row>
+									<label>&nova_initia_prefs_url_prefix.label;</label>
+									<textbox preference="nova_initia_prefs_url_prefix" />
+								</row>
+							</rows>
+						</grid>
+					</tabpanel>
+					<tabpanel id="nova_initia_preferences_login_management" orient="vertical">
+						<groupbox id="nova_initia_preferences_login_management_login_saved_groupbox">
+							<caption label="&nova_initia_preferences_login_management_login_saved_groupbox.label;" />
+							<checkbox preference="nova_initia_prefs_login_saved" label="&nova_initia_prefs_login_saved.label;"/>
+						</groupbox>
+						<groupbox id="nova_initia_preferences_login_management_users_groupbox">
+							<caption label="&nova_initia_preferences_login_management_users_groupbox.label;" />
+							<vbox>
+								<listbox id="nova_initia_preferences_login_management_users_listbox">
+								</listbox>
+								<button id="nova_initia_preferences_login_management_users_button" label="&nova_initia_preferences_login_management_users_button.label;" oncommand="myNova_initiaPref_Sys.delete_saved_login(document.getElementById('menu_nova_initia_tools_menu_user_submenupopup'))" />
+							</vbox>
+						</groupbox>
+					</tabpanel>
+				</tabpanels>
+			</tabbox>
+		</prefpane>
+	</prefwindow>
+</overlay>

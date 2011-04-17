@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<RDF:RDF xmlns:em="http://www.mozilla.org/2004/em-rdf#"
+         xmlns:NC="http://home.netscape.com/NC-rdf#"
+         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <RDF:Description RDF:about="urn:mozilla:install-manifest">
+		<em:targetApplication>
+		  <Description>
+			<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+			<em:minVersion>1.5</em:minVersion>
+			<em:maxVersion>4.0</em:maxVersion>
+		  </Description>
+		</em:targetApplication>
+		<em:name>Nova-Initia</em:name>
+		<em:id>nova-initia@nova-initia.com</em:id>
+		<em:version>0.5.0.0</em:version>
+		<em:type>2</em:type>
+		<em:description>Nova-Initia, the new beginnings</em:description>
+		<em:creator>reMOG Team</em:creator>
+		<em:developer>TheUngodlyOne</em:developer>
+		<em:developer>FesterCluck</em:developer>
+		<em:contributor>All kinds of peeps I failed to mention</em:contributor>
+		<em:homepageURL>http://www.nova-initia.com/</em:homepageURL>
+		<em:updateURL>http://data.nova-initia.com/toolbars/update.rdf</em:updateURL>
+		<em:updateKey>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCflNF4/GIfk/+8OgJJTptEiccXeAs4thUzXJXCXqB5Iskqh+ga3fbXuB3a7AxpFDPfNHM8qjRgcQgq3ct+Jrs2ky1tC6leiItSXgZNyseIDp/Bpy17+g1pUcbRMWOgMYOSuiLSTgLD3nyFpmKis6hOIneb0ecVUthYvZITUSZNfwIDAQAB</em:updateKey>
+		<em:iconURL>chrome://nova-initia_toolbar/skin/images/icons/icon.PNG</em:iconURL>       
+    </RDF:Description>
+</RDF:RDF>

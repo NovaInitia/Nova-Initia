@@ -6,7 +6,7 @@ var headers = [];
 var setHeaders = function(headers, res) {
     return $.Deferred(function(dfd) {
         for(var k in headers) {
-            res.header(key, headers[key]);
+            res.header(k, headers[k]);
         }
         dfd.resolve();
     });

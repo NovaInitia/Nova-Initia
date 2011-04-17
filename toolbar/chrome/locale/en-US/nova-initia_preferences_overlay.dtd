@@ -1,0 +1,59 @@
+<!ENTITY nova_initia_prefs_prefpane.label										"Nova-Initia">
+<!ENTITY nova_initia_prefs_tab_user.label										"User">
+<!ENTITY nova_initia_prefs_tab_filters.label									"Filters">
+<!ENTITY nova_initia_prefs_tab_hotkeys.label									"Hotkeys">
+<!ENTITY nova_initia_prefs_tab_appearance.label									"Appearance">
+<!ENTITY nova_initia_prefs_tab_admin.label										"Admin">
+<!ENTITY nova_initia_prefs_tab_login_management.label							"Login Management">
+
+<!ENTITY nova_initia_prefs_avatar.label											"Avatar:">
+<!ENTITY nova_initia_prefs_tagline.label										"Tag Line:">
+<!ENTITY nova_initia_prefs_class.label											"Player Class:">
+<!ENTITY nova_initia_prefs_class_refugee.label									"Refugee">
+<!ENTITY nova_initia_prefs_class_giver.label									"Giver">
+<!ENTITY nova_initia_prefs_class_guardian.label									"Guardian">
+<!ENTITY nova_initia_prefs_class_guide.label									"Guide">
+<!ENTITY nova_initia_prefs_location.label										"Location:">
+<!ENTITY nova_initia_prefs_email.label											"Email:">
+<!ENTITY nova_initia_prefs_user_submit_button.label								"Update Profile">
+<!ENTITY nova_initia_prefs_minrate_tour.label									"Minimum tour rating:">
+<!ENTITY nova_initia_prefs_minrate_door.label									"Minimum door rating:">
+
+<!ENTITY nova_initia_prefs_nsfw_all.label										"Filter all NSFW">
+<!ENTITY nova_initia_prefs_nsfw_sound.label										"Filter sound">
+<!ENTITY nova_initia_prefs_nsfw_nude.label										"Filter nudity">
+<!ENTITY nova_initia_prefs_nsfw_curses.label									"Filter adult language">
+<!ENTITY nova_initia_prefs_nsfw_violence.label									"Filter violence">
+<!ENTITY nova_initia_prefs_toolfilter_door.label								"Filter doors">
+<!ENTITY nova_initia_prefs_toolfilter_sign.label								"Filter signs">
+<!ENTITY nova_initia_prefs_toolfilter_barrel.label								"Filter barrels">
+<!ENTITY nova_initia_prefs_toolfilter_tour.label								"Filter tour invites">
+<!ENTITY nova_initia_prefs_spam_ignore.label									"Filter player messages">
+
+<!ENTITY nova_initia_prefs_hotkey_trap.label									"Trap:">
+<!ENTITY nova_initia_prefs_hotkey_barrel.label									"Barrel:">
+<!ENTITY nova_initia_prefs_hotkey_signpost.label								"Signpost:">
+<!ENTITY nova_initia_prefs_hotkey_doorway.label									"Doorway:">
+<!ENTITY nova_initia_prefs_hotkey_spider.label									"Spider:">
+<!ENTITY nova_initia_prefs_hotkey_shield.label									"Shield:">
+<!ENTITY nova_initia_prefs_hotkey_sg.label										"Sg:">
+<!ENTITY nova_initia_prefs_hotkey_update_button.label							"Update Hotkeys">
+<!ENTITY nova_initia_prefs_hotkey_update_button.tooltiptext						"Click after editing hotkeys to make the changes">
+<!ENTITY nova_initia_preferences_hotkeys_groupbox.label							"Hotkeys">
+<!ENTITY nova_initia_preferences_hotkeys_modifiers_groupbox.label				"Modifiers">
+<!ENTITY nova_initia_prefs_hotkeys_modifiers_ctrl_pref.label					"Ctrl">
+<!ENTITY nova_initia_prefs_hotkeys_modifiers_alt_pref.label						"Alt">
+<!ENTITY nova_initia_prefs_hotkeys_modifiers_shift_pref.label					"Shift">
+
+<!ENTITY nova_initia_prefs_loginbar_at_startup.label							"Login Toolbar Visible At Startup">
+<!ENTITY nova_initia_prefs_toolbar_text_orientation_vertical.label				"Vertical Text And Icon Orientation">
+<!ENTITY nova_initia_prefs_stash_barrel_button_placement_bottom.label			"Place Barrel Stash Buttons On Bottom Of Popup">
+
+<!ENTITY nova_initia_prefs_debug.label											"Debug">
+<!ENTITY nova_initia_prefs_server_url.label										"Server URL (no prefix):">
+<!ENTITY nova_initia_prefs_url_prefix.label										"URL Prefix:">
+
+<!ENTITY nova_initia_preferences_login_management_login_saved_groupbox.label	"Auto Login">
+<!ENTITY nova_initia_prefs_login_saved.label									"Login Automatically">
+<!ENTITY nova_initia_preferences_login_management_users_groupbox.label			"Saved Login Management">
+<!ENTITY nova_initia_preferences_login_management_users_button.label			"Delete Saved User">

@@ -80,6 +80,7 @@ module.exports = function(app, db, mongoose) {
             }
         });
 
+        // Toggle Shields
         app.get(root.route+'toggle', function(req, res) {
             if(req.header('LastKey')) {
                 console.log("Toggle");

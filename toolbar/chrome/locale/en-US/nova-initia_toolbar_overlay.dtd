@@ -1,0 +1,123 @@
+<!ENTITY nova_initia_tools_toolbar.toolbarname							"Nova Initia Toolbar">
+<!ENTITY nova_initia_tools_toolbar.accesskey							"R">
+<!ENTITY nova_initia_login_toolbar.toolbarname							"Nova Initia Login Toolbar">
+<!ENTITY nova_initia_login_toolbar_register_button.label				"Register">
+<!ENTITY nova_initia_login_toolbar_register_button.tooltiptext			"Register for Nova Initia">
+<!ENTITY nova_initia_login_toolbar_login_button.label					"Login">
+<!ENTITY nova_initia_login_toolbar_login_button.tooltiptext				"Login to your Nova Initia Account">
+<!ENTITY nova_initia_help_menu.label									"Nova Initia">
+<!ENTITY nova_initia_help_menuitem_about.label							"About">
+<!ENTITY nova_initia_help_menuitem_about.tooltiptext					"Information about Nova Initia">
+<!ENTITY nova_initia_help_menuitem_help.label							"Help">
+<!ENTITY nova_initia_help_menuitem_help.tooltiptext						"Get help for Nova Initia">
+<!ENTITY nova_initia_throbber.label										"Working...">
+<!ENTITY nova_initia_throbber.tooltiptext								"Activity Throbber">
+<!ENTITY nova_initia_panels_dismiss_button.value						"Dismiss">
+<!ENTITY nova_initia_panels_back_button.value							"Back">
+<!ENTITY nova_initia_panels_complete_button.value						"Complete Tour">
+<!ENTITY nova_initia_tool_trap.label									"Trap">
+<!ENTITY nova_initia_tool_trap.tooltiptext								"Set a Trap">
+<!ENTITY nova_initia_tool_barrel.label									"Barrel">
+<!ENTITY nova_initia_tool_barrel.tooltiptext							"Leave a Barrel">
+<!ENTITY nova_initia_barrel_panel_button.label							"Open!">
+<!ENTITY nova_initia_barrel_panel_button.tooltiptext					"Loot the contents of the Barrel">
+<!ENTITY nova_initia_tool_signpost.label								"Signpost">
+<!ENTITY nova_initia_tool_signpost.tooltiptext							"Place a Signpost">
+<!ENTITY nova_initia_tool_doorway.label									"Doorway">
+<!ENTITY nova_initia_tool_doorway.tooltiptext							"Open a Doorway">
+<!ENTITY nova_initia_tool_spider.label									"Spider">
+<!ENTITY nova_initia_tool_spider.tooltiptext							"Release a Spider">
+<!ENTITY nova_initia_tool_shield.label									"Shield">
+<!ENTITY nova_initia_tool_shield.tooltiptext							"Equip Shield">
+<!ENTITY nova_initia_mail.label											"Messages">
+<!ENTITY nova_initia_mail.tooltiptext									"Goto Messages">
+<!ENTITY nova_initia_profile.label										"Profile">
+<!ENTITY nova_initia_profile.tooltiptext								"Goto Profile">
+<!ENTITY nova_initia_events.label										"Events">
+<!ENTITY nova_initia_events.tooltiptext									"Go to Events feed">
+<!ENTITY nova_initia_logout.label										"Logout">
+<!ENTITY nova_initia_logout.tooltiptext									"Log out of Nova Initia">
+<!ENTITY nova_initia_tool_Sg.label										"Sg">
+<!ENTITY nova_initia_tool_Sg.tooltiptext								"Your Current Sg">
+<!ENTITY nova_initia_tools_menu.label									"Nova Initia">
+<!ENTITY nova_initia_tools_menupopup_logout.label						"Logout of Nova Initia">
+<!ENTITY nova_initia_tools_menupopup_login.label						"Login to Nova Initia">
+<!ENTITY nova_initia_tools_menu_user_submenu.label						"Switch Users">
+<!ENTITY nova_initia_tools_menu_user_submenu_new.label					"New User">
+<!ENTITY nova_initia_tools_menuitem_clear_all.label						"Clear Saved Logins">
+<!ENTITY nova_initia_tools_menuitem_sync_user.label						"Sync User Data">
+<!ENTITY nova_initia_tool_barrel_panel_popup_sg.label					"Sg: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_sg.tooltiptext				"# of Sg to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_traps.label				"Traps: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_traps.tooltiptext			"# of Traps to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_barrels.label				"Barrels: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_barrels.tooltiptext		"# of Barrels to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_spiders.label				"Spiders: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_spiders.tooltiptext		"# of Spiders to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_shields.label				"Shields: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_shields.tooltiptext		"# of Shields to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_doorways.label				"Doorways: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_doorways.tooltiptext		"# of Doorways to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_signposts.label			"Signposts: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_signposts.tooltiptext		"# of Signposts to leave in the Barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_message.label				"Message: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_message.tooltiptext		"Message to leave on the barrel for the looter">
+<!ENTITY nova_initia_tool_barrel_panel_popup_message.emptytext			"Leave a message?">
+<!ENTITY nova_initia_tool_barrel_panel_popup_label.label				"Label: ">
+<!ENTITY nova_initia_tool_barrel_panel_popup_label.tooltiptext			"Message to mark on the outside of this barrel">
+<!ENTITY nova_initia_tool_barrel_panel_popup_label.emptytext			"Label this barrel?">
+<!ENTITY nova_initia_tool_barrel_panel_popup_stash_button.label			"Stash">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_sg.tooltiptext		"# of Sg left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_traps.tooltiptext		"# of Traps left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_barrels.tooltiptext	"# of Barrels let in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_spiders.tooltiptext	"# of Spiders left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_shields.tooltiptext	"# of Shields left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_doorways.tooltiptext	"# of Doorways left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_signposts.tooltiptext	"# of Signposts left in the Barrel">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_message.tooltiptext	"Message left by the stasher for you">
+<!ENTITY nova_initia_tool_barrel_loot_panel_popup_label.value			"Loot Retrieved from the Barrel:">
+<!ENTITY nova_initia_tool_barrel_panel_popup_label.value				"Fill the Barrel">
+<!ENTITY nova_initia_tool_doorway_panel_popup_label.value				"Open A Doorway">
+<!ENTITY nova_initia_tool_doorway_panel_popup_URL.label					"URL:">
+<!ENTITY nova_initia_tool_doorway_panel_popup_URL.tooltiptext			"The Destination URL">
+<!ENTITY nova_initia_tool_doorway_panel_popup_URL.emptytext				"http://nova-initia.com/">
+<!ENTITY nova_initia_tool_doorway_panel_popup_hint.label				"Hint:">
+<!ENTITY nova_initia_tool_doorway_panel_popup_hint.tooltiptext			"A Hint to leave with the Doorway">
+<!ENTITY nova_initia_tool_doorway_panel_popup_comment.label				"Comment:">
+<!ENTITY nova_initia_tool_doorway_panel_popup_comment.tooltiptext		"A Comment to appear after they walk through the Doorway">
+<!ENTITY nova_initia_tool_doorway_panel_popup_add_to_chain.label		"Add To Existing Chain">
+<!ENTITY nova_initia_tool_doorway_panel_popup_nsfw.label				"NSFW?">
+<!ENTITY nova_initia_tool_doorway_panel_popup_add_to_chain.tooltiptext	"Check to add to the existing Chain">
+<!ENTITY nova_initia_tool_doorway_panel_popup_nsfw.tooltiptext			"Check if this doorway leads to a site not safe for work viewing.">
+<!ENTITY nova_initia_tool_doorway_panel_popup_stash_button.label		"Open Doorway">
+<!ENTITY nova_initia_doorway_panel_end_button.label						"Like">
+<!ENTITY nova_initia_doorway_panel_end_comment_label.value				"Comment: ">
+<!ENTITY nova_initia_doorway_panel_end_rate_label_1.value				"1">
+<!ENTITY nova_initia_doorway_panel_end_rate_label_2.value				"2">
+<!ENTITY nova_initia_doorway_panel_end_rate_label_3.value				"3">
+<!ENTITY nova_initia_doorway_panel_end_rate_label_4.value				"4">
+<!ENTITY nova_initia_doorway_panel_end_rate_label_5.value				"5">
+<!ENTITY nova_initia_goto_start.label									"">
+<!ENTITY nova_initia_start_tour.label									"">
+<!ENTITY nova_initia_tool_signpost_panel_popup_label.value				"Place a Signpost">
+<!ENTITY nova_initia_tool_signpost_panel_popup_title.label				"Title:">
+<!ENTITY nova_initia_tool_signpost_panel_popup_title.tooltiptext		"Enter a Title for the Signpost">
+<!ENTITY nova_initia_tool_signpost_panel_popup_comment.label			"Comments:">
+<!ENTITY nova_initia_tool_signpost_panel_popup_comment.tooltiptext		"Enter some Comments for the Signpost">
+<!ENTITY nova_initia_tool_signpost_panel_popup_nsfw.label				"NSFW?">
+<!ENTITY nova_initia_tool_signpost_panel_popup_nsfw.tooltiptext			"Check if this signpost is on a site not safe for work viewing.">
+<!ENTITY nova_initia_tool_signpost_panel_popup_placed_button.label		"Place Signpost">
+<!ENTITY nova_initia_mail_panel_popup_label.value						"Send a Message">
+<!ENTITY nova_initia_mail_receiver.label								"To:">
+<!ENTITY nova_initia_mail_receiver.tooltiptext							"Enter the recipient's username">
+<!ENTITY nova_initia_mail_subject.label									"Subject:">
+<!ENTITY nova_initia_mail_subject.tooltiptext							"Enter the subject">
+<!ENTITY nova_initia_mail_body.label									"Message:">
+<!ENTITY nova_initia_mail_body.tooltiptext								"Enter your message here.">
+<!ENTITY nova_initia_mail_send_button.label								"Send the message">
+<!ENTITY nova_initia_tour_panel_A_button.label							"A">
+<!ENTITY nova_initia_tour_panel_B_button.label							"B">
+<!ENTITY nova_initia_tour_panel_C_button.label							"C">
+<!ENTITY nova_initia_tour_panel_D_button.label							"D">
+<!ENTITY nova_initia_cancel.label							"Cancel">
+<!ENTITY nova_initia_close.label							"Close">

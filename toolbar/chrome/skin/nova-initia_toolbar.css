@@ -1,0 +1,519 @@
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
+#nova-initia_preferences_overlay_prefpane
+{
+	
+}
+
+#nova_initia_tool_trap
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/trap.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_trap
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/trap.ico");
+}
+
+#nova_initia_tool_barrel
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/barrel.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_barrel
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/barrel.ico");
+}
+
+#nova_initia_tool_signpost
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/sign.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_signpost
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/sign.ico");
+}
+
+#nova_initia_tool_doorway
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/doorway.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_doorway
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/doorway.ico");
+}
+
+#nova_initia_tool_spider
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/spider.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_spider
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/spider.ico");
+}
+
+#nova_initia_tool_shield
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/shield.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_shield
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/shield.ico");
+}
+
+#nova_initia_mail
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/home.ico");
+}
+toolbar[iconsize="small"] #nova_initia_mail
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/home.ico");
+}
+
+#nova_initia_tool_sg
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/sg.ico");
+}
+toolbar[iconsize="small"] #nova_initia_tool_sg
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/icons/sg.ico");
+}
+
+#nova_initia_throbber,#nova_initia_login_toolbar_throbber
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/throbber.GIF");
+}
+toolbar[iconsize="small"] #nova_initia_throbber,#nova_initia_login_toolbar_throbber
+{
+	list-style-image: url("chrome://nova-initia_toolbar/skin/images/throbber.GIF");
+}
+
+.nova_initia_tools_toolbarbutton
+{
+  -moz-box-orient: vertical;
+  min-width: 0;
+  text-align: right;
+}
+
+#nova_initia_tools_toolbar[mode="icons"] .nova_initia_tools_toolbarbutton .toolbarbutton-text
+{
+	display: block;
+	padding-left: 4px;
+}
+
+/*
+.nova_initia_panel_label, .nova_initia_panel_image
+{
+	padding-top:7px;
+}
+*/
+
+.nova_initia_panel_rate_label
+{
+	padding-left:4px;
+}
+
+.nova_initia_tools_toolbarbutton > .toolbarbutton-icon
+{
+  -moz-margin-end: 0px;
+}
+
+toolbar[mode="full"] .nova_initia_tools_toolbarbutton
+{
+  min-width: 57px;
+}
+
+.nova_initia_tools_toolbarbutton
+{
+  padding: 5px;
+}
+
+.nova_initia_tools_toolbarbutton[checked="true"]
+{
+  padding: 5px !important;
+}
+
+.nova_initia_tool_barrel_panel_popup_class
+{
+ 	text-decoration: underline;
+	color: #fff;
+}
+
+toolbar[iconsize="large"][mode="icons"] .nova_initia_tools_toolbarbutton:-moz-system-metric(windows-default-theme)
+{
+  padding: 6px; /* uxtheme border drawing fix/hack */
+}
+
+toolbar[iconsize="large"][mode="icons"] .nova_initia_tools_toolbarbutton[checked="true"]:-moz-system-metric(windows-default-theme)
+{
+  padding: 6px !important; /* uxtheme border drawing fix/hack */
+}
+
+panel.nova_initia_panel_class, panel.nova_initia_panel_class_top
+{
+	border-style: solid;
+	height: 50px;
+	background-color: transparent;
+	border: 0px;
+}
+
+/*
+.nova_initia_panel_class_top, .nova_initia_panel_class
+{
+	background-position: 0px 0px;
+	border: 0;
+	padding: 0px;
+	margin: 0px;	
+}
+*/
+
+#nova_initia_tool_signpost_panel_popup
+{
+	height: 135px;
+	width: 250px;
+}
+
+#nova_initia_tool_barrel_panel_popup, #nova_initia_tool_barrel_panel_popup_top, #nova_initia_tool_barrel_loot_panel_popup
+{
+	width: 265px;
+	height: 255px;
+}
+
+#nova_initia_tool_barrel_panel_popup_top>vbox>hbox
+{
+	margin-top: 5px;
+}
+
+#nova_initia_tool_doorway_panel_popup, #nova_initia_doorway_panel_end
+{
+	width: 245px;
+	height: 175px;
+}
+
+#nova_initia_tool_doorway_panel_popup_dismiss_button, #nova_initia_tool_doorway_panel_popup_stash_button
+{
+	margin-top: -5px;
+}
+
+.nova_initia_panel_textbox, .nova_initia_panel_checkbox
+{
+	-khtml-opacity: 0.6;
+	opacity: 0.6;
+	border:0;
+}
+
+.nova_initia_panel_textbox:hover, .nova_initia_panel_checkbox:hover
+{
+	-khtml-opacity: 0.9;
+	opacity: 0.9;
+	border:0;
+}
+
+button.yeah, button.open, button.dismiss, button.tostart, button.start, button.through
+{
+	-moz-appearance: none;
+	background-color: rgba(0,0,0,0);
+	font-weight: bold;
+	border: 0px;
+	padding: 2px;
+	width: 113px;
+	height: 40px;
+	margin-left: 5px;
+	margin-top: 2px;
+	opacity: .25;
+	background-repeat:no-repeat;
+	background-position: 0px 0px;
+}
+
+button.small
+{
+	font-size: .8em;
+}
+button.tostart
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/tostart_button.png");
+}
+
+button.start
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/start_button.png");
+}
+
+
+button.yeah:hover, button.open:hover, button.dismiss:hover, button.tostart:hover, button.start:hover, button.through:hover
+{
+	opacity: .9;
+}
+
+button.yeah
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/yeah_button.png");
+}
+
+button.open
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/open_button.png");
+}
+
+button.dismiss
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/dismiss_button.png");
+}
+
+button.through
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/through_button.png");
+}
+
+button.rateup, button.ratedown
+{
+	-moz-appearance: none;
+	background-color: rgba(0,0,0,0);
+	font-weight: bold;
+	border: 0px;
+	padding: 2px;
+	width: 100px;
+	height: 100px;
+	margin-left: 5px;
+	margin-bottom: -5px;
+	opacity: .8;
+	background-repeat:no-repeat;
+	background-position: 0px 0px;
+}
+
+button.rateup:hover, button.ratedown:hover
+{
+	opacity: 1;
+}
+button.rateup
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/check.png");
+}
+
+button.ratedown
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/cross.png");
+}
+
+
+button.previous
+{
+
+}
+
+button.next
+{
+	left: 196;
+}
+
+
+panel.nova_initia_panel_class>stack
+{
+	width: 258px;
+}
+
+vbox.nova_initia_panel_text
+{
+	font-weight: bold;
+	padding-left: 1px;
+	padding-top: 15px;
+}
+
+vbox.nova_initia_panel_text>label
+{
+	font-size: 1em;
+	color: #fff;
+}
+
+vbox.nova_initia_panel_text>description
+{
+	font-size: .8em;
+	white-space: pre;
+}
+
+.nova_initia_panel_buttons
+{
+	padding-top: 2px;
+	width: 122px;
+}	
+
+#nova_initia_trap_panel
+{
+	width: 258px;
+	height: 218px;
+}
+
+#nova_initia_fail_panel
+{
+	width: 258px;
+	height: 218px;
+}
+
+
+#nova_initia_barrel_panel
+{
+	width: 258px;
+	height: 218px;
+}
+
+#nova_initia_spider_panel
+{
+	width: 258px;
+	height: 218px;
+}
+
+#nova_initia_shield_panel
+{
+	background-image: url("chrome://nova-initia_toolbar/skin/images/overlays/shield_triggered.jpg");
+	background-repeat:no-repeat;
+	background-position: 0px 0px;
+	width: 258px;
+	height: 202px;
+}
+
+#nova_initia_doorway_panel
+{
+	width: 258px;
+	height: 220px;
+}
+
+#nova_initia_doorway_panel>vbox
+{
+	margin-top: 90px;
+}
+
+#nova_initia_doorway_panel_label, #nova_initia_barrel_panel_label
+{
+	color: #fff;
+	padding-left: 10px;
+	text-align: left;
+}
+
+#nova_initia_spider_panel_label, #nova_initia_shield_panel_label, #nova_initia_trap_panel_label
+{
+	color: #000;
+	padding-left: 10px;
+	text-align: left;
+}
+
+#nova_initia_doorway_panel_hint_label_0, #nova_initia_doorway_panel_hint_label_1, #nova_initia_doorway_panel_hint_label_2
+{
+	color: #000;
+	font-size: .8em;
+	border: 0px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	padding-top: 0px;
+	padding-bottom: 0px;
+}
+
+#nova_initia_doorway_panel_count
+{
+	color: #fff;
+}
+
+#nova_initia_tour_panel_A_button, #nova_initia_tour_panel_B_button, #nova_initia_tour_panel_C_button, #nova_initia_tour_panel_D_button
+{
+	-moz-appearance: none;
+	background-color: rgba(0,0,0,0);
+	font-weight: bold;
+	border: 0px;
+	width: 30px;
+	height: 135px;
+	background-repeat:no-repeat;
+	background-position: 0px 0px;
+	color: #FFF;
+	white-space: normal;
+
+}
+
+#nova_initia_tour_panel_A_button
+{
+	background-image: url('chrome://nova-initia_toolbar/skin/images/overlays/1sg.png');
+}
+#nova_initia_tour_panel_B_button
+{
+	background-image: url('chrome://nova-initia_toolbar/skin/images/overlays/2sg.png');
+}
+
+#nova_initia_tour_panel_C_button
+{
+	background-image: url('chrome://nova-initia_toolbar/skin/images/overlays/3sg.png');
+}
+
+#nova_initia_tour_panel_D_button
+{
+	background-image: url('chrome://nova-initia_toolbar/skin/images/overlays/4sg.png');
+}
+
+button.chain
+{
+	background-image: url('');
+	-moz-appearance: none;
+	background-color: rgba(0,0,0,0);
+	font-weight: bold;
+	border: 0px;
+	background-repeat:no-repeat;
+	background-position: 0px 0px;
+	color: #fff;
+	text-decoration: none;
+}
+
+button.black
+{
+	color: #000;
+}
+
+button.chain:hover
+{
+	text-decoration: underline;
+}
+
+button.chain[disabled="true"]
+{
+	display: none;
+}
+
+button.chain[disabled="true"]:hover
+{
+	text-decoration: none;
+}
+
+
+#nova_initia_signpost_panel, #nova_initia_tour_start_panel
+{
+	width: 258px;
+	height: 202px;
+}
+
+#nova_initia_tour_panel
+{
+	width: 400px;
+	height: 202px;
+}
+
+.popupTitle
+{
+	font-weight: bold;
+	margin: 3px;
+	padding-top: 4px;
+}
+
+#nova_initia_tour_start_panel_comment_textbox, #nova_initia_tour_panel_comment_textbox
+{
+	height: 155px;
+	width: 230px;
+	background-color: rgb(220,220,220);
+	color: #000;
+	margin-top: -10px;
+	padding: 5px;
+}
+
+#nova_initia_tour_start_panel_title_label, #nova_initia_tour_panel_title_label
+{
+	padding-top: 5px;
+}
+
+#nova_initia_tour_panel_A_label, #nova_initia_tour_panel_B_label, #nova_initia_tour_panel_C_label, #nova_initia_tour_panel_D_label
+{
+	display: none;
+	background-color: rgb(220,220,220);
+}
