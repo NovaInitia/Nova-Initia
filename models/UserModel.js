@@ -78,70 +78,70 @@ module.exports = function(mongoose) {
 		    	'sg' : Number
 		});
         
-        UserSchema.virtual('awardXP').set(function(obj) {
+        	UserSchema.virtual('awardXP').set(function(obj) {
             
                 
-                switch(obj.cls) {
-                    case 1:
-                        UserSchema.update({
-                                '_id' : this._id
-                            },{
-                                '$inc': {
-                                    'stats.exp.giver' : obj.amount
-                                }
-                            });
-                        break;
-                    case 2:
-                        UserSchema.update({
-                                '_id' : this._id
-                            },{
-                                '$inc': {
-                                    'stats.exp.guardian' : obj.amount
-                                }
-                            });
-                        break;
-                    case 3:
-                        UserSchema.update({
-                                '_id' : this._id
-                            },{
-                                '$inc': {
-                                    'stats.exp.guide' : obj.amount
-                                }
-                            });
-                        break;
+	                switch(obj.cls) {
+        	            case 1:
+                	        UserSchema.update({
+                        	        '_id' : this._id
+	                            },{
+        	                        '$inc': {
+                	                    'stats.exp.giver' : obj.amount
+                        	        }
+	                            });
+        	                break;
+	                    case 2:
+        	                UserSchema.update({
+                	                '_id' : this._id
+                        	    },{
+	                                '$inc': {
+        	                            'stats.exp.guardian' : obj.amount
+                	                }
+	                            });
+        	                break;
+                	    case 3:
+                        	UserSchema.update({
+	                                '_id' : this._id
+        	                    },{
+                	                '$inc': {
+                        	            'stats.exp.guide' : obj.amount
+	                                }
+        	                    });
+                	        break;
                         
-                    default:
-                        break;
-                }
-        });
+	                    default:
+        	                break;
+                	}
+	        });
         
-        UserSchema.virtual('addSg').set(function(amount) {
-                    UserSchema.update({
-                        '_id' : this._id
-                    },{
-                        '$inc': {
-                            sg : amount
-                        }
-                    });
-        });
+	        UserSchema.virtual('addSg').set(function(amount) {
+        	            UserSchema.update({
+                	        '_id' : this._id
+	                    },{
+        	                '$inc': {
+                	            sg : amount
+	                        }
+        	            });
+	        });
         
-        UserSchema.virtual('toggleShield').set(function() {
-            
+	        UserSchema.virtual('toggleShield').set(function() {
+        	    
 		    this.armor.use = !this.armor.use;
-            if(this.amror.use && parseInt(this.armor.hits,10) === 0) {
-                if(parseInt(this.shields, 10) > 0) {
-                    this.shields.decrement(1);
-                    this.armor.hits.increment(1);
-                    if(parseInt(this['class'], 10) === 2) {
-                        this.armor.hits.increment(2);
-                    }
-                } else {
-                    this.armor.use = false;
-                }
-            }
-            this.save();
-        });
-        
+	            if(this.amror.use && parseInt(this.armor.hits,10) === 0) {
+			if(parseInt(this.shields, 10) > 0) {
+	                    this.shields.decrement(1);
+        	            this.armor.hits.increment(1);
+                	    if(parseInt(this['class'], 10) === 2) {
+	                        this.armor.hits.increment(2);
+        	            }
+	                } else {
+        	            this.armor.use = false;
+	                }
+        	    }
+	            this.save();
+	        });
+
 		mongoose.model('User',UserSchema);
 
 	} //End If
