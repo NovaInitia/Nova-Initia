@@ -23,7 +23,7 @@ module.exports = function(app, db, mongoose) {
                 case "id":
                     Users.findOne({"_id":val}, {}, function(err, doc) {
                         if(!err) {
-                            callback(doc);
+                            resolveChildren(doc,callback);
                         } else {
                             callback(err);
                         }
@@ -44,6 +44,18 @@ module.exports = function(app, db, mongoose) {
                     callback({});
             }
         };
+
+
+
+        var resolveChildren = function(doc, cb) {
+            //Class
+                var Class = mongoose.model('Class', 'Classes');
+                Class.findOne({"_id" : doc.doc["class"].oid }, {}, function(err, res) {
+                    doc.doc["class"] = res.doc;
+                    cb(doc);
+                });
+        };
+
         
         
         var removePrivateData = function(obj) {

@@ -22,7 +22,12 @@ module.exports = {
         route : '/user/',
         id : ':val',
         auth : 'profile'
-    },  
+    },
+    
+    page : {
+        route : '/page/',
+        id : ':val'
+    },
     
     util : require('util'),
     

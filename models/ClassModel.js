@@ -6,8 +6,8 @@ module.exports = function(mongoose) {
 			ObjectId = Schema.ObjectId;
 
 		var ClassSchema = new Schema({
-        		'_id' : Number,
-        		'name' : String
+                '_id' : Number,
+                'name' : String
 		});
 
 		mongoose.model('Class', ClassSchema);

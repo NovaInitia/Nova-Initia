@@ -28,7 +28,7 @@ module.exports = function(mongoose) {
 		        'signposts' : Number,
                 'avatar' : String,
 		        'date' : Date,
-		        'class' : Number,
+		        'class' : {},
                 'stats' : {
 		                'lvls' : {
 		                        'giver' : Number,
@@ -141,7 +141,7 @@ module.exports = function(mongoose) {
             }
             this.save();
         });
-
+        
 		mongoose.model('User',UserSchema);
 
 	} //End If
