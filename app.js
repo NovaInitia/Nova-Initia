@@ -18,7 +18,6 @@ mongooseTypes.loadTypes(mongoose);
         mongoose = require('./models/ToolModel')(mongoose);
         mongoose = require('./models/MessageModel')(mongoose);
 
-
 //End Models
 
 var db = mongoose.connect(NI.db.host,NI.db.name,NI.db.port);
