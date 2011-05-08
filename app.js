@@ -1,4 +1,22 @@
-var NI = require('./config.js'); 
+var NI = require('./config.js');
+
+$ = require('jquery');
+
+//Models
+	
+	//Init
+	var mongoose = require('mongoose');
+	var mongooseTypes = require('mongoose-types');
+	mongooseTypes.loadTypes(mongoose);
+
+	//References
+	mongoose = require('./models/ClassModel')(mongoose);
+	mongoose = require('./models/UserModel')(mongoose);
+
+
+//End Models
+
+var db = mongoose.connect(NI.db.host,NI.db.name,NI.db.port);
 
 //Controllers
 
@@ -11,5 +29,5 @@ var NI = require('./config.js');
 	
 //End Controllers
 
-app.listen(3000);
+app.listen(3001);
 
