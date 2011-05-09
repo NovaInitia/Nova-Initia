@@ -1,4 +1,5 @@
 
+var async = require("async");
 module.exports = function(mongoose) {
 
         if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
@@ -35,12 +36,7 @@ module.exports = function(mongoose) {
 
                 mongoose.model('Barrel',BarrelSchema);
 
-                var SpiderSchema = new Schema({
-                    '_id' : Number,
-                    'user' : String,
-                    'date' : Date,
-                    'level' : Number
-                });
+
 
                 mongoose.model('Spider',SpiderSchema);
 
@@ -70,7 +66,7 @@ module.exports = function(mongoose) {
                     'cmt' : String,
                     'url' : String,
                     'title' : String,
-                    'nsfw' : Boolean,
+                    'nsfw' : Boolean
                     
                 });
 
@@ -82,4 +78,5 @@ module.exports = function(mongoose) {
         return mongoose;
 
 }; //End modules.exports
-
+/*
+*/

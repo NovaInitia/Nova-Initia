@@ -1,6 +1,6 @@
 //Init
 var NI = require('./config.js');
-$ = require('jquery')
+$ = require('jquery');
 var util = require('util');
 var mongoose = require('mongoose');
 var mongooseTypes = require('mongoose-types');
@@ -20,7 +20,7 @@ mongooseTypes.loadTypes(mongoose);
 
 //End Models
 
-var db = mongoose.connect(NI.db.host,NI.db.name,NI.db.port);
+var db = mongoose.connect(NI.db.host, NI.db.name, NI.db.port);
 
 //Controllers
 
