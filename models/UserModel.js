@@ -116,6 +116,7 @@ module.exports = function(mongoose) {
 	        });
         
 	        UserSchema.virtual('addSg').set(function(amount) {
+			if(this.sg + amount > 0) {
         	            UserSchema.update({
                 	        '_id' : this._id
 	                    },{
@@ -123,7 +124,42 @@ module.exports = function(mongoose) {
                 	            sg : amount
 	                        }
         	            });
+				return true;
+			}
+			return false;
 	        });
+
+	        UserSchema.virtual('hitShield').set(function(amount) {
+			if(this.armor.hits > 0) {
+				if(this.armor.hits == 1) {
+					UserSchema.update({
+        	        	        	'_id' : this._id
+		        	        },{
+                	        		armor : {
+							use : false
+						}
+        	            		});
+				}
+				
+				UserSchema.update({
+					'_id' : this._id
+				},{
+					'$inc': {
+						armor : {
+							hits : -1
+						}
+					}
+				});
+				
+				return true;
+			
+			}
+
+			return false;
+
+	        });
+
+
         
 	        UserSchema.virtual('toggleShield').set(function() {
         	    

@@ -4,8 +4,7 @@ var base = require('./BaseController'),
 	sendData = base.sendData;
 
 
-module.exports = function(app, db, mongoose) {
-
+module.exports = function($, app, db, mongoose) {
     var root = NI.user;
 
 	if(app && db && mongoose) {
@@ -85,9 +84,9 @@ module.exports = function(app, db, mongoose) {
     
         // Get Authorized User
         app.get(root.route+root.auth, function(req, res) {
-            if(req.header('LastKey')) {
-                findUserByProp("key", req.header('LastKey'), function(obj) {
-                    sendData(res, JSON.stringify(obj));
+            if(req.cookies.key) {
+                findUserByProp("key", req.cookies.key, function(obj) {
+                    sendData(res, obj);
                 });
             }
         });
@@ -110,7 +109,7 @@ module.exports = function(app, db, mongoose) {
                 } else {
                     console.log("No User Found");
                 }
-				sendData(res, JSON.stringify(obj));
+				sendData(res, obj);
 			});
 		});
         
