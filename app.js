@@ -1,11 +1,10 @@
-//Init
 var NI = require('./config.js');
 $ = require('jquery');
 var util = require('util');
 var mongoose = require('mongoose');
 var mongooseTypes = require('mongoose-types');
 mongooseTypes.loadTypes(mongoose);
-
+var mongo = require('mongodb');
 
 //Models
 
@@ -27,10 +26,11 @@ var db = mongoose.connect(NI.db.host, NI.db.name, NI.db.port);
         //Init
         var express = require('express');
         var app = express.createServer();
+        app.use(express.cookieParser());
 
         //References
-        app = require('./controllers/UserController.js')(app, db, mongoose);
-        app = require('./controllers/PageController.js')(app, db, mongoose);
+        app = require('./controllers/UserController.js')($, app, db, mongoose);
+        app = require('./controllers/PageController.js')($, app, db, mongo);
 
 //End Controllers
 

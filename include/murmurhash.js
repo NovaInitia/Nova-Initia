@@ -62,3 +62,4 @@ module.exports = function(key, seed) {
 
 	return h1 >>> 0;
 }
+
