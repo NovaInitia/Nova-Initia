@@ -36,12 +36,7 @@ module.exports = function(mongoose) {
 
                 mongoose.model('Barrel',BarrelSchema);
 
-                var SpiderSchema = new Schema({
-                    '_id' : Number,
-                    'user' : String,
-                    'date' : Date,
-                    'level' : Number
-                });
+
 
                 mongoose.model('Spider',SpiderSchema);
 
@@ -84,13 +79,4 @@ module.exports = function(mongoose) {
 
 }; //End modules.exports
 /*
-SpiderSchema.virtual("awardableXP").set(function () {
-  var age = this.date.getTime()/24/60/60/1000;
-  var exp = NI.tools.spiders.experience.sort(function (a,b) {return a.age - b.age;});
-  for (var i = exp.length;i >= 0;--i) {
-    if (exp[i].age <= age)
-      return exp[i].amount;
-  }
-  return 0;
-})
 */
