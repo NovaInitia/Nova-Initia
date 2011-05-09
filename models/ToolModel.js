@@ -1,4 +1,5 @@
 
+var async = require("async");
 module.exports = function(mongoose) {
 
         if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
@@ -70,7 +71,7 @@ module.exports = function(mongoose) {
                     'cmt' : String,
                     'url' : String,
                     'title' : String,
-                    'nsfw' : Boolean,
+                    'nsfw' : Boolean
                     
                 });
 
@@ -82,4 +83,14 @@ module.exports = function(mongoose) {
         return mongoose;
 
 }; //End modules.exports
-
+/*
+SpiderSchema.virtual("awardableXP").set(function () {
+  var age = this.date.getTime()/24/60/60/1000;
+  var exp = NI.tools.spiders.experience.sort(function (a,b) {return a.age - b.age;});
+  for (var i = exp.length;i >= 0;--i) {
+    if (exp[i].age <= age)
+      return exp[i].amount;
+  }
+  return 0;
+})
+*/
