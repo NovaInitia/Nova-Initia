@@ -11,7 +11,7 @@ module.exports = function(mongoose) {
         SpiderSchema.virtual("awardableXP").set(function () {   //When called, returns the amount of XP the placer can gain.
             var age = new Date().getTime() - this.date.getTime();   //Number of milliseconds since the spider was placed.
             var exp = NI.tools.spiders.experience.sort(function (a,b) {return a.age - b.age;});     //Settings array of {age: <days>, amount: <XP to award>}. Sorted so lower age is first.
-            for (var i = exp.length;i >= 0;--i) {   //Loop though the settigns array. Start at the end, otherwise the first element will return true.
+            for (var i = exp.length;i >= 0;--i) {   //Loop though the settigns array. Start at the end because the first element should always return true.
                 if (exp[i].age <= age)  //Check to see if this is the last element in exp that matches our age variable.
                     return exp[i].amount;   //Return the XP to award.
             }
@@ -19,4 +19,5 @@ module.exports = function(mongoose) {
         })
         mongoose.model('Spider',SpiderSchema);
     }
+    return mongoose;
 }
