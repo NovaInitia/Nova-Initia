@@ -2,17 +2,22 @@ module.exports = function(mongoose) {
     if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
         var Schema = mongoose.Schema,
         ObjectId = Schema.ObjectId;
-        var SignpostSchema = new Schema({
+        var DoorwaySchema = new Schema({
             '_id' : Number,
             'user' : String,
-            'class' : Number,
             'date' : Date,
             'level' : Number,
+            'class' : Number,
             'cmt' : String,
             'url' : String,
             'title' : String,
-            'nsfw' : Boolean
+            'nsfw' : Boolean,
+            'score' : Number,
+            'votes' : Number,
+            'count' : Number,
+            'chain' : Number
         });
+        mongoose.model('Doorway',DoorwaySchema);
     }
     return mongoose;
 };

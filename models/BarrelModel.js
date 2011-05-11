@@ -5,6 +5,7 @@ module.exports = function(mongoose) {
         var BarrelSchema = new Schema({
             '_id' : Number,
             'user' : String,
+            'class' : Number,
             'date' : Date,
             'level' : Number,
             'sg' : Number,
@@ -15,7 +16,10 @@ module.exports = function(mongoose) {
             'doorways' : Number,
             'signposts' : Number,
             'title' : String,
-            'cmt' : String
+            'msg' : String,
+            'cmt' : String,
+            'looted' : String,
+            'passes' : Number
         });
         mongoose.model('Barrel',BarrelSchema);
     }

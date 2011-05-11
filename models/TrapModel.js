@@ -5,6 +5,7 @@ module.exports = function(mongoose) {
         var TrapSchema = new Schema({
             '_id' : Number,
             'user' : String,
+            'class' : Number,
             'date' : Date,
             'level' : Number
         });
