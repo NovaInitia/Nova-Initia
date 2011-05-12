@@ -74,7 +74,20 @@ module.exports = {
             messageAllowHTML: [0,0,0,0],    //Level a player must be if they wish to add HTML to their barrel messages.
             toolCapacity: [10,100,10,10],   //Number of tools a player can put in a barrel. 10 Sg = 1 Tool.
             stashSgLV: [0,1,0,0],           //Level each class must be in order to place Sg in a barrel.
-            lootOwnBarrelLV: [0,15,0,0]     //Level at which a player may loot a barrel he left.
+            lootOwnBarrelLV: [0,15,0,0],     //Level at which a player may loot a barrel he left.
+            recycleLV: [0,1,0,0],
+            recycleChance: [{lv: 1, chance: .8},
+                            {lv: 3, chance: .65},
+                            {lv: 5, chance: .5},
+                            {lv: 7, chance: .4},
+                            {lv: 10, chance: .3},
+                            {lv: 12, chance: .2},
+                            {lv: 15, chance: .1},
+                            {lv: 18, chance: .5},
+                            {lv: 20, chance: .4},
+                            {lv: 5, chance: .5},
+                            {lv: 25, chance: .9}
+            ]
         },
         spiders: {
             cost: [0,0,0,0],
