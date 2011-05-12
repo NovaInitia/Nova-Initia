@@ -66,6 +66,7 @@ module.exports = function(mongoose) {
 		    },
 		    'email' : Email,
 		    'parts' : [],
+            'events' : {},
 		    'first' : String,
 		    'last' : String,
             'mod' : Boolean,

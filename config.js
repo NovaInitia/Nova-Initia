@@ -37,7 +37,7 @@ module.exports = {
             cost: [3,1,3,3],
             rate: [1,1,1,1],                //Number of traps given per unit bought.
             failChance: [0.05, 0.05, 0.05, 0.05],   //Needs work.
-            experience: [{age: 0, xp: [5,5,5,5]}    //See 'spiders.experience'
+            experience: [{age: 0, xp: 5}    //See spiders.experience
             ],
             initialXP: 5, //XP given when the trap is set.
             baseDMG: [{age: 0, dmg: [10,10,10,10]}, //Damage a trap causes depending on the class of the player who set it.
@@ -50,7 +50,7 @@ module.exports = {
                           {karma: 95, age: 90*24*60*60*1000, addedDMG: 10, addedEXP: 0}  //Users must have at most <karma> to recieve the benefits.
             ],
             anonymousTrapLV: [0,10,0,0],
-            anonymousTrapCost: [0,0,0,0],
+            anonymousTrapCost: [0,0,0,0]
             
         },
         barrels: {
@@ -63,14 +63,18 @@ module.exports = {
                          {age: 150*24*60*60*1000, xp: 50}
             ],
             initalXP: 5,
-            fullnessBonus: 5,   //Value is multiplied by the percentage of space the player filled in the barrel. A maxed barrel will yield <class> XP.
-            reusePercent: [0,0.25,0,0],  //Chance a barrel can be reused, depending on the class of the player that first set it.
-            reuseNum: 3,    //The max number of times players can visit a URL with a 
+            fullnessBonus: 5,   //Value is multiplied by the percentage of space the player filled in the barrel and rounded down. A maxed barrel will yield full XP.
+            reuseChance: [],  //Chance a barrel can be reused, depending on the class of the player that first set it.
+            reuseNum: 3,    //The max number of times players can visit a URL.
             internalMessageLV: [1,1,1,1],   //Level a player must be to leave an internal message in a barrel.
             externalMessageLV: [0,5,0,0],   //Level a player must be to attach an external message to a barrel.
+            messageLength: {internalMessage: 155,
+                            externalMessage: 128
+            },
             messageAllowHTML: [0,0,0,0],    //Level a player must be if they wish to add HTML to their barrel messages.
             toolCapacity: [10,100,10,10],   //Number of tools a player can put in a barrel. 10 Sg = 1 Tool.
-            lootOwnBarrelLV: [0,15,0,0]    //Level at which a player may loot a barrel he left.
+            stashSgLV: [0,1,0,0],           //Level each class must be in order to place Sg in a barrel.
+            lootOwnBarrelLV: [0,15,0,0]     //Level at which a player may loot a barrel he left.
         },
         spiders: {
             cost: [0,0,0,0],
@@ -82,7 +86,7 @@ module.exports = {
                          {age: 150*24*60*60*1000, xp: 50}
             ],
             initialXP: 5,
-            baseDMG: [{age: 0, dmg: 10}
+            baseDMG: [{age: 0, dmg: [10,10,10,10]}  //Dmg based on class that placed Spider.
             ],
             crowdingSpiderPlaced: 0,
             crowdingSpiderTripped: 0,
