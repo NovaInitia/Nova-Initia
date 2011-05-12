@@ -18,6 +18,12 @@ module.exports = function(mongoose) {
             }
             return 0;   //Whoops, none matched.
         })
+        SpiderSchema.virtual("explode").set(function (user) {
+            
+        })
+        SpiderSchema.virtual("backfire").set(function (user) {
+            
+        })
         mongoose.model('Spider',SpiderSchema);
     }
     return mongoose;
