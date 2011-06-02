@@ -5,7 +5,7 @@ module.exports = {
     debug : false,
     
     web : {
-        port : 3083,
+        port : process.env.NIPORT,
         response : {
              gzip : false
         }
