@@ -1,37 +1,55 @@
-var NI = require('./config.js');
-$ = require('jquery');
-var util = require('util');
-var mongoose = require('mongoose');
-var mongooseTypes = require('mongoose-types');
-mongooseTypes.loadTypes(mongoose);
-var mongo = require('mongodb');
+var App = {};
+App.NI = require('./config.js');
+App.$ = $ = require('jquery');
+App.Util = require('util');
+App.Http = require('http');
+App.MongoDB = require('mongodb');
+App.DataServer= new App.MongoDB.Server(App.NI.db.host,App.NI.db.port, {});
 
-//Models
+Public = {};
+Public.mail = require('./include/Mail')(App);
 
+//Helper Functions
 
-        //References
-        mongoose = require('./models/ClassModel')(mongoose);
-        mongoose = require('./models/UserModel')(mongoose);
-        mongoose = require('./models/DomainModel')(mongoose);
-        mongoose = require('./models/PageModel')(mongoose);
-        mongoose = require('./models/ToolModel')(mongoose);
-        mongoose = require('./models/MessageModel')(mongoose);
+$.whenArray = function(arr) {
+    return $.when.apply( this, arr );
+};
 
-//End Models
+//End Helper Functions
 
-var db = mongoose.connect(NI.db.host, NI.db.name, NI.db.port);
+App.Server = App.Http.createServer(function(request,response) {
+	request.setEncoding("utf8");
+	request.content = "";
+	request.addListener("data", function(data) {
+		request.content += data;
+	});
+	request.addListener("end", function() {
+		var connectionHandler = $.Deferred(function(con) {
+			var respSet = [];
+			var reqObj = JSON.parse(request.content);
+			for(var obj in reqObj) {
+				for(var method in reqObj[obj]) {
+					respSet.push($.Deferred(function(dfd) {
+						dfd.resolve(Public[obj][method](reqObj[obj][method]));
+					}));
+				}
+			}
+			$.whenArray(respSet).then(function(){
+				var sendSet = {};
+				for(var param in arguments) {	
+					$.extend(sendSet, arguments[param]);
+				}
+				if(sendSet == {})
+					con.resolve();
+				else
+					con.resolve(sendSet);
+			});
+		}).then(function(resp) {
+			response.statusCode = 200;
+			response.setHeader("Content-Type", "application/json");
+			response.write(JSON.stringify(resp));
+			response.end();
+		});
+	});
+}).listen(6060);
 
-//Controllers
-
-        //Init
-        var express = require('express');
-        var app = express.createServer();
-        app.use(express.cookieParser());
-
-        //References
-        app = require('./controllers/UserController.js')($, app, db, mongoose);
-        app = require('./controllers/PageController.js')($, app, db, mongo);
-
-//End Controllers
-
-app.listen(NI.web.port);

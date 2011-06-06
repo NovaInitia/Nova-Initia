@@ -75,7 +75,8 @@ module.exports = function(mongoose) {
             'location' : String,
 		    'cmt' : String,
 		    'stamps' : [],
-            'sg' : Number
+            'sg' : Number,
+            'mail' : []
 		});
         
         UserSchema.virtual('awardXP').set(function(obj) {
