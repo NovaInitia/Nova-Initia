@@ -1,6 +1,6 @@
 //Settings
 
-var I = Infinity;
+var I = Infinity;   //So we don't have to type 'infinity' all over the place. >.>
 module.exports = {
     debug : false,
     
@@ -148,17 +148,20 @@ module.exports = {
         signposts: {
             cost: [3,3,3,1],
             rate: [1,1,1,1],                //Number of signposts given per unit bought.
-            experience: 10,
-            initialXP: 0,
+            experience: 10,                 //XP given when someone takes a tour with a given signpost.
+            initialXP: 0,                   //XP given when the user places a signpost on a page.
             
-            branches: {giver: [{level: 0, branches: 1}
+            branches: {giver: [
+                           {level: 0, branches: 1}      
                        ],
-                       guardian: [{level: 0, branches: 1}
+                       guardian: [
+                           {level: 0, branches: 1}
                        ],
-                       guide: [{level: 0, branches: 1},
-                               {level: 8, branches: 2},
-                               {level: 12, branches: 3},
-                               {level: 20, branches: 4}
+                       guide: [
+                           {level: 0, branches: 1},
+                           {level: 8, branches: 2},
+                           {level: 12, branches: 3},
+                           {level: 20, branches: 4}
                        ]
             }
         }
