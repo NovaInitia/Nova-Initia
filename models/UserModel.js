@@ -12,19 +12,20 @@ module.exports = function(mongoose) {
 
 		var UserSchema = new Schema({
             '_id' : String,
-		    'pass' : String,
+		    'pass' : String,    //Password for account?
 		    'ldate' : Date,
 		    'key' : String,
             'armor' : {
-		        'use' : Boolean,
+		        'use' : Boolean,    //Start inventory.
 		        'hits' : Number
 		    },
-		    'traps' : Number,			
+            'sg' : Number,
+		    'traps' : Number,
 		    'barrels' : Number,
 		    'spiders' : Number,
             'shields' : Number,
 		    'doorways' : Number,
-		    'signposts' : Number,
+		    'signposts' : Number,   //End inventory.
             'avatar' : String,
 		    'date' : Date,
 		    'class' : {},
@@ -75,7 +76,6 @@ module.exports = function(mongoose) {
             'location' : String,
 		    'cmt' : String,
 		    'stamps' : [],
-            'sg' : Number,
             'mail' : []
 		});
         

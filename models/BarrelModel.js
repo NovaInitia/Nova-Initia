@@ -15,9 +15,9 @@ module.exports = function(mongoose) {
             'shields' : Number,
             'doorways' : Number,
             'signposts' : Number,   //End barrel contents.
-            'title' : String,       //?
+            'title' : String,       //What's this for?
             'msg' : String,         //Message on the inside of the barrel.
-            'cmt' : String,         //Comment on the outside of the barrel.
+            'cmt' : String,         //Comment on the outside of the barrel?
             'durability' : Number,  //The number of attempts at recycling that can be performed on this barrel.
             'visitors' : []         //Array of users who have checked the barrel while it was empty.
         });

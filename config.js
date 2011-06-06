@@ -76,17 +76,17 @@ module.exports = {
             stashSgLV: [0,1,0,0],           //Level each class must be in order to place Sg in a barrel.
             lootOwnBarrelLV: [0,15,0,0],     //Level at which a player may loot a barrel he left.
             recycleLV: [0,1,0,0],
-            recycleChance: [{lv: 1, chance: .8},
-                            {lv: 3, chance: .65},
-                            {lv: 5, chance: .5},
-                            {lv: 7, chance: .4},
-                            {lv: 10, chance: .3},
-                            {lv: 12, chance: .2},
-                            {lv: 15, chance: .1},
-                            {lv: 18, chance: .5},
-                            {lv: 20, chance: .4},
-                            {lv: 5, chance: .5},
-                            {lv: 25, chance: .9}
+            recycleChance: [{lv: 1, chance: 0.8},
+                            {lv: 3, chance: 0.65},
+                            {lv: 5, chance: 0.5},
+                            {lv: 7, chance: 0.4},
+                            {lv: 10, chance: 0.3},
+                            {lv: 12, chance: 0.2},
+                            {lv: 15, chance: 0.1},
+                            {lv: 18, chance: 0.5},
+                            {lv: 20, chance: 0.4},
+                            {lv: 5, chance: 0.5},
+                            {lv: 25, chance: 0.9}
             ]
         },
         spiders: {
@@ -121,7 +121,7 @@ module.exports = {
             initialXP: {giver: 10, guardian: 10, guide: 10},
             transportBarrel: {giver: {base: 0.08, subtract: 0.002}, //Base is the base %. Subtract is multiplied
                               guardian: {base: 0.08, subtract: 0.002},  // by the players LV and subtracted from
-                              guide: {base: 0.08, subtract: 0.002}      //the base to from the actual %.
+                              guide: {base: 0.08, subtract: 0.002}      //the base to the actual %.
             },
             charges: {giver: [{level: 0, charge: 50},   //The level required for each charge amount
                               {level: 15, charge: 100}  //for each class.
@@ -158,7 +158,7 @@ module.exports = {
                        guide: [{level: 0, branches: 1},
                                {level: 8, branches: 2},
                                {level: 12, branches: 3},
-                               {level: 20, branches: 2}
+                               {level: 20, branches: 4}
                        ]
             }
         }
