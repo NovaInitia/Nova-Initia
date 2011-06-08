@@ -7,14 +7,6 @@ App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
 var Public = {};
 Public.mail = require('./include/Mail')(App);
 
-//Helper Functions
-
-$.whenArray = function(arr) {
-    return $.when.apply( this, arr );
-};
-
-//End Helper Functions
-
 new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
     if(error) throw error;
     App.db.client = client;
