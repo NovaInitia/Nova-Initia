@@ -7,20 +7,16 @@ module.exports = function(App) {
                 	       	msg.date = new Date();
 	                        msg._id = msg.date.getTime();
 
-       	                	new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
-	               	                if(error) throw error;
-                        	        var Users = new App.mongodb.Collection(client, 'Users');
-               	                	Users.update(
-           	    	                	{_id : msg.to},
-	                       	                {$addToSet : { mail : msg}},
-        	                       	        function(err) {
-                                        	        if(err) dfd.reject(err);
-                       	                        	else dfd.resolve();
-	                               	        }
-					);
-				});
-			}
-		}).promise();
+                            var Users = new App.mongodb.Collection(App.db.client, 'Users');
+                            Users.update({_id : msg.to},
+                                        {$addToSet : { mail : msg}},
+                                        function(err) {
+                                            if(err) dfd.reject(err);
+                                            else dfd.resolve();
+                                        }
+                            );
+			        }
+		        }).promise();
 	};
 
 	function validateParams(msg) {
