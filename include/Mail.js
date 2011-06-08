@@ -15,10 +15,11 @@ module.exports = function(App) {
                     {_id : msg.to},
                     {$addToSet : { mail : msg}},
                     function(err) {
-                        if(err) dfd.reject(err);
-                        else dfd.resolve();
-                        }
-                    );
+                        if(err) 
+                            dfd.reject(err);
+                        else
+                            dfd.resolve();
+                    });
 				});
 			}
 		}).promise();
