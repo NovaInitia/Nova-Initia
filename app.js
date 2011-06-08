@@ -1,12 +1,10 @@
 var App = {};
-App.NI = require('./config.js');
-App.$ = $ = require('jquery');
-App.Util = require('util');
-App.Http = require('http');
-App.MongoDB = require('mongodb');
-App.DataServer= new App.MongoDB.Server(App.NI.db.host,App.NI.db.port, {});
+App = require('./config.js');
+var $ = App.$;
 
-Public = {};
+App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
+
+var Public = {};
 Public.mail = require('./include/Mail')(App);
 
 //Helper Functions
@@ -17,7 +15,7 @@ $.whenArray = function(arr) {
 
 //End Helper Functions
 
-App.Server = App.Http.createServer(function(request,response) {
+App.Server = App.http.createServer(function(request,response) {
 	request.setEncoding("utf8");
 	request.content = "";
 	request.addListener("data", function(data) {
@@ -51,5 +49,5 @@ App.Server = App.Http.createServer(function(request,response) {
 			response.end();
 		});
 	});
-}).listen(6060);
+}).listen(App.web.port);
 
