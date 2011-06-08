@@ -145,7 +145,7 @@ module.exports = {
                        guide: [{level: 0, branches: 1},
                                {level: 8, branches: 2},
                                {level: 12, branches: 3},
-                               {level: 20, branches: 2}
+                               {level: 20, branches: 4}
                        ]
             }
         }
