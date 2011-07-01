@@ -2,8 +2,11 @@
 
 var I = Infinity;   //So we don't have to type 'infinity' all over the place. >.>
 module.exports = {
+    
+    //IDE Settings
     debug : false,
     
+    //App Connections
     web : {
         port : process.env.NIPORT,
         response : {
@@ -17,6 +20,23 @@ module.exports = {
         port : 27017
     },
     
+    //Requires
+    util : require('util'),
+    
+    $ : require('jquery'),
+    
+    http : require('http'),
+    
+    mongodb : require('mongodb'),
+    
+    //App Settings
+    
+    public : {
+        mail : [ 'send', 'get', 'read', 'delete' ],
+        user : [ 'login', 'logout', 'create', 'equip', 'profile' ],
+        trap : [ 'set', 'make', 'buy', 'sell' ]
+    },
+    
     user : {
         route : '/user/',
         id : ':val',
@@ -28,7 +48,7 @@ module.exports = {
         id : ':val'
     },
     
-    util : require('util'),
+
     
     through : function(d,cb){cb(null,d);},
 
