@@ -1,10 +1,11 @@
 //Settings
 
 var I = Infinity;
+
 module.exports = {
-    
+
     //IDE Settings
-    debug : false,
+    debug : true,
     
     //App Connections
     web : {
@@ -23,7 +24,13 @@ module.exports = {
     //Requires
     util : require('util'),
     
-    $ : require('jquery'),
+    $ : function() {
+            var jquery = require('jquery');
+            jquery.whenArray = function(arr) {
+                return jquery.when.apply( this, arr );
+            };
+            return jquery;
+        }(),
     
     http : require('http'),
     
