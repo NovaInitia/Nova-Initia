@@ -5,7 +5,7 @@ var I = Infinity;
 module.exports = {
 
     //IDE Settings
-    debug : false,
+    debug : true,
     
     //App Connections
     web : {
