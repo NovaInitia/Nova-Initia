@@ -1,6 +1,6 @@
-module.exports = function(App) {
+module.exports = function (App) {
     var service = {};    
-	service.send = function(opts) {
+	service.send = function (opts) {
             return App.$.Deferred(function(dSend) {
                     if(validateParams(opts)) {
                             //Grab pageId
@@ -19,10 +19,10 @@ module.exports = function(App) {
                                 {$addToSet: {spiders: opts}},   //Update
                                 {},                             //Options
                                 function(err, modified) {       //Callback
-                                    if(err)                     //Error (Needs more work)
-                                    {
+                                    if(err) {                   //Error (Needs more work)
                                         dSend.reject(err);
-                                    } else {                    //Success
+                                    } 
+                                    else {                      //Success
                                         dSend.resolve(modified);//Returns the Page object modified, this should be changed.
                                     }
                                 }
@@ -32,12 +32,9 @@ module.exports = function(App) {
 	};
 
 	function validateParams(opts) {
-            var valid = true;
-	        valid = (typeof(opts.to) !== "undefined");
-	        valid = (typeof(opts.from) !== "undefined");
 	        //valid = (typeof(opts.sub) !== "undefined" && opts.sub !== "");
 	        //	valid = (typeof(opts.body) !== "undefined" && opts.body !== "");
-	        return valid;
+	        return typeof(opts.to) !== "undefined" && typeof(opts.from) !== "undefined";
 	}
 
 	return service;
