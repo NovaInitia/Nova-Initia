@@ -7,6 +7,7 @@ Public.spiders = require('./controllers/set/Spiders')(App);
 Public.traps = require('./controllers/set/Traps')(App);
 Public.barrels = require('./controllers/set/Barrels')(App);
 Public.doorways = require('./controllers/set/Barrels')(App);
+Public.signposts = require('./controllers/set/Signposts')(App);
 
 App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
 

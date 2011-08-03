@@ -1,24 +1,26 @@
 module.exports = function (App) {
+    var collection = "Pages";
+    var property = "doorways";
     return baseSet = require('../SendController')(App,
         //Write Method
-        function(opts,dSend) {
+        function(obj,dWrite) {
             
             //Grab pageId
-            var pageId = parseInt(opts.to);
+            var pageId = parseInt(obj.to);
             
             //Arrange properties for write to Db
-            delete opts.to;
-            opts.date = new Date();
-            opts._id = opts.date.getTime();
+            delete obj.to;
+            obj.date = new Date();
+            obj._id = obj.date.getTime();
             
-            dSend("Pages",pageId,"doorways",opts);
+            dWrite(collection,pageId,property,obj);
         },
         //Validation Method
-        function(opts) {
+        function(obj) {
             return (
-                typeof(opts.to) !== "undefined"
-                && typeof(opts.from) !== "undefined"
-                && typeof(opts.url) !== "undefined"
+                typeof(obj.to) !== "undefined"
+                && typeof(obj.from) !== "undefined"
+                && typeof(obj.url) !== "undefined"
             );
         });
 };

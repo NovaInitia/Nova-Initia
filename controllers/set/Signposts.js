@@ -1,22 +1,22 @@
 module.exports = function (App) {
-    var collection = "Pages";
-    var property = "traps";
+    var collection = "Users";
+    var property = "posts";
     return baseSet = require('../SendController')(App,
         //Write Method
         function(obj,dWrite) {
 
-            //Grab pageId
-            var pageId = parseInt(obj.to);
+            //Grab userId
+            var userId = obj.user;
             
             //Arrange properties for write to Db
-            delete obj.to;
+            delete obj.user;
             obj.date = new Date();
             obj._id = obj.date.getTime();
             
-            dWrite(collection,pageId,property,obj);
+            dWrite(collection, userId, property, obj);
         },
         //Validation Method
         function(obj) {
-            return typeof(obj.to) !== "undefined" && typeof(obj.from) !== "undefined";
-    	});
+            return typeof(obj.url) !== "undefined" && typeof(obj.user) !== "undefined";
+        });
 };
