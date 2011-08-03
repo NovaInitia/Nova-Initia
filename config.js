@@ -9,7 +9,7 @@ module.exports = {
     
     //App Connections
     web : {
-        port : process.env.NIPORT,
+        port : 3080,
         response : {
              gzip : false
         }

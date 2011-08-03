@@ -3,7 +3,10 @@ App = require('./config.js');
 var $ = App.$;
 var Public = {};
 Public.mail = require('./include/Mail')(App);
-Public.spiders = require('./include/Spiders')(App);
+Public.spiders = require('./controllers/set/Spiders')(App);
+Public.traps = require('./controllers/set/Traps')(App);
+Public.barrels = require('./controllers/set/Barrels')(App);
+Public.doorways = require('./controllers/set/Barrels')(App);
 
 App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
 
@@ -25,6 +28,7 @@ function Log(msgs, name) {
 }
 
 function connectionHandler() {
+    console.log("Conn H Open");
     var request = this;
     var apiRequest = JSON.parse(request.content);
     Log(apiRequest, "apiRequest");
@@ -36,8 +40,8 @@ function connectionHandler() {
                 dResponses.push(
                     $.Deferred(function(dApiRequest) {
                         var apiRequestParams = method;
-                        //Log(apiRequestParams, "apiRequestParams");
-                        //Log(Public.spiders, "Public");
+                        Log(apiRequestParams, "apiRequestParams");
+                        Log(Public.spiders, "Public");
                         Public[serviceName][methodName](apiRequestParams).then(function(apiResults) {
                             Log(apiResults, "apiResults");
                             dApiRequest.resolve(apiResults);
@@ -61,23 +65,30 @@ function connectionHandler() {
 }
 
 new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
-    if(error) throw error;
+    console.log("DB Open");
+    if(error) {
+        console.log("DB Error");
+        throw error;
+    }
     App.db.client = client;
-    App.Server = App.http.createServer(function(request,response) {
-        //Log(request, "Request");
-        request.setEncoding("utf8");
-        request.content = "";
-        request.addListener("data", function(data) {
-            //Log(data,"Data Recieved");
+    console.log("Create Server");
+    
+    
+    App.http.createServer(function(req, res) {
+        req.addListener('data',function(data) {
+            Log(data,"Data Recieved");
             this.content += data;
         });
-        request.addListener("end", function() {
+        Log(req, "Request");
+        req.setEncoding("utf8");
+        req.content = "";
+        
+        req.addListener("end", function() {
             connectionHandler.apply(this).then(function() {
-                //console.log(App.util.inspect(request));
-                response.statusCode = 200;
-                response.setHeader("Content-Type", "application/json");
-                response.end(JSON.stringify(request.response));
+                res.statusCode = 200;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(req.response));
             });
         });
-    }).listen(App.web.port);
+    }).listen(App.web.port,'127.0.0.1', function(){ console.log("Server Started");});
 });
