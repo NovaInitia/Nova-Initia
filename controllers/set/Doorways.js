@@ -1,7 +1,8 @@
+var controller = require('./Controller');
 module.exports = function (App) {
     var collection = "Pages";
     var property = "doorways";
-    return baseSet = require('../SendController')(App,
+    return controller(App,
         //Write Method
         function(obj,dWrite) {
             
@@ -16,11 +17,40 @@ module.exports = function (App) {
             dWrite(collection,pageId,property,obj);
         },
         //Validation Method
-        function(obj) {
-            return (
-                typeof(obj.to) !== "undefined"
-                && typeof(obj.from) !== "undefined"
-                && typeof(obj.url) !== "undefined"
-            );
-        });
+        {
+            before : function(obj, cb) {
+                        var valid = (
+                            typeof(obj.to) !== "undefined"
+                            && typeof(obj.from) !== "undefined"
+                            && typeof(obj.url) !== "undefined"
+                        );
+                        if(valid) {
+                            var Users = new App.mongodb.Collection(App.db.client, "Users");
+                            Users.findAndModify(
+                                {_id: obj.from, doorways : { "$gt" : 0 }},                       //Criteria
+                                [],                                                             //Sort
+                                { $inc : { doorways : -1 } },                                     //Update
+                                { new : true},                                                  //Options
+                                function(err, modified) {                                       //Callback
+                                    if(err) {                                                   //Error (Needs more work)
+                                        cb({ error : err });
+                                    } else {                                                    //Success
+                                        App.db.client.dereference(modified.class, function(err, results) {
+                                            if(!err) {
+                                                modified.class = results;
+                                            }
+                                            cb({ data : { user : modified } });
+                                        });
+                                    }
+                                }
+                            );
+                        } else {
+                            cb({ error : "invalid_params" });
+                        }
+                        
+            },
+            after : function(obj) {
+            }
+        }
+    );
 };

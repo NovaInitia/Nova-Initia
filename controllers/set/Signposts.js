@@ -1,7 +1,8 @@
+var controller = require('./Controller');
 module.exports = function (App) {
     var collection = "Users";
     var property = "posts";
-    return baseSet = require('../SendController')(App,
+    return controller(App,
         //Write Method
         function(obj,dWrite) {
 
@@ -16,7 +17,35 @@ module.exports = function (App) {
             dWrite(collection, userId, property, obj);
         },
         //Validation Method
-        function(obj) {
-            return typeof(obj.url) !== "undefined" && typeof(obj.user) !== "undefined";
-        });
+        {
+            before : function(obj, cb) {
+                        var valid = typeof(obj.url) !== "undefined" && typeof(obj.user) !== "undefined";
+                        if(valid) {
+                            var Users = new App.mongodb.Collection(App.db.client, "Users");
+                            Users.findAndModify(
+                                {_id: obj.from, signposts : { "$gt" : 0 }},                     //Criteria
+                                [],                                                             //Sort
+                                {$inc : { signposts : -1 } },                                     //Update
+                                { new : true},                                                  //Options
+                                function(err, modified) {                                       //Callback
+                                    if(err) {                                                   //Error (Needs more work)
+                                        cb({ error : err });
+                                    } else {                                                    //Success
+                                        App.db.client.dereference(modified.class, function(err, results) {
+                                            if(!err) {
+                                                modified.class = results;
+                                            }
+                                            cb({ data : { user : modified } });
+                                        });
+                                    }
+                                }
+                            );
+                        } else {
+                            cb({ error : "invalid_params" });
+                        }
+            },
+            after : function(obj) {
+            }
+        }
+    );
 };

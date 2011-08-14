@@ -53,13 +53,13 @@ function connectionHandler() {
         });
         $.when.apply(this,dResponses).then(function(){
             Log(arguments, "when:responseData");
-            var sendSet = {};
+            request.response = {};
             if(arguments) {
-                //$.map(responseData, function(value, key) {
-                    $.extend(sendSet, arguments);
-                //})
+                $.each(arguments, function(i,obj) {
+                    $.extend(request.response, obj);
+                });
             }
-            request.response = sendSet;
+            //request.response = sendSet;
             dConnection.resolve();
         });
     }).promise();
@@ -91,5 +91,5 @@ new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
                 res.end(JSON.stringify(req.response));
             });
         });
-    }).listen(App.web.port,'127.0.0.1', function(){ console.log("Server Started");});
+    }).listen(App.web.port,App.web.host, function(){ console.log("Server Started");});
 });

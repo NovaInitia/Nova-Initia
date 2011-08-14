@@ -9,6 +9,7 @@ module.exports = {
     
     //App Connections
     web : {
+	host : "172.21.15.1",
         port : 3080,
         response : {
              gzip : false

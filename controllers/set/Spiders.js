@@ -1,13 +1,14 @@
-
+var controller = require("./Controller");
+var UserHelper = require("../UserHelper");
 module.exports = function (App) {
     var collection = "Pages";
     var property = "spiders";
-    return baseSet = require('../SendController')(App,
+    return controller(App,
         //Write Method
         function(obj,dWrite) {
             
             //Grab pageId
-            var pageId = parseInt(obj.to);
+            var pageId = parseInt(obj.to,10);
             
             //Arrange properties for write to Db
             delete obj.to;
@@ -17,8 +18,22 @@ module.exports = function (App) {
             dWrite("Pages",pageId,"spiders",obj);
         },
         //Validation Method
-        function(opts) {
-	        return typeof(obj.to) !== "undefined" && typeof(obj.from) !== "undefined";
-    	});
+        {
+            before : function(obj, cb) {
+                        var valid = typeof(obj.to) !== "undefined" && typeof(obj.from) !== "undefined";
+                        if(valid) {
+                            UserHelper(App,
+                                {_id: obj.from, spiders : { "$gt" : 0 }},               //Query
+                                {$inc : { spiders : -1 } },                             //Update
+                                cb                                                      //Callback
+                            );        
+                        } else {
+                            cb({ error : "invalid_params" });
+                        }
+            },
+            after : function(obj) {
+            }
+        }
+    );
 };
 
