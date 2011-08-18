@@ -10,11 +10,11 @@ module.exports = function(mongoose) {
 
                 var DomainSchema = new Schema({
                         '_id' : String,
-			            'hash' : String,
+                        'uri' : String,
                         'pages' : [],
                         'users' : [],
-                        'score' : Number,
-                        'owner' : String
+                        'hits' : Number,
+                        'domains' : []
                 });
 
                 mongoose.model('Domain',DomainSchema);

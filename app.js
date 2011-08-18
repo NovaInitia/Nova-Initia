@@ -3,11 +3,14 @@ App = require('./config.js');
 var $ = App.$;
 var Public = {};
 Public.mail = require('./include/Mail')(App);
-Public.spiders = require('./controllers/set/Spiders')(App);
-Public.traps = require('./controllers/set/Traps')(App);
-Public.barrels = require('./controllers/set/Barrels')(App);
-Public.doorways = require('./controllers/set/Barrels')(App);
-Public.signposts = require('./controllers/set/Signposts')(App);
+Public.spiders = {};
+Public.spiders.put = require('./controllers/put/Spiders')(App);
+Public.traps = require('./controllers/put/Traps')(App);
+Public.barrels = require('./controllers/put/Barrels')(App);
+Public.doorways = require('./controllers/put/Barrels')(App);
+Public.signposts = require('./controllers/put/Signposts')(App);
+Public.arrive = require('./controllers/put/Location')(App);
+Public.depart = require('./controllers/delete/Location')(App);
 
 App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
 

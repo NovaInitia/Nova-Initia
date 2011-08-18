@@ -3,6 +3,8 @@ var UserHelper = require("../UserHelper");
 module.exports = function (App) {
     var collection = "Pages";
     var property = "spiders";
+    var returnProp = "page";
+    
     return controller(App,
         //Write Method
         function(obj,dWrite) {
@@ -14,8 +16,15 @@ module.exports = function (App) {
             delete obj.to;
             obj.date = new Date();
             obj._id = obj.date.getTime();
-            
-            dWrite("Pages",pageId,"spiders",obj);
+
+            var updateObj = {};
+            updateObj[property] = obj;
+            dWrite(
+                collection,
+                {_id: pageId },
+                { $addToSet : updateObj },
+                returnProp
+            );
         },
         //Validation Method
         {

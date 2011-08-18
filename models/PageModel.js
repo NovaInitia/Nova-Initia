@@ -9,7 +9,6 @@ module.exports = function(mongoose) {
 
                 var PageSchema = new Schema({
                         '_id' : String,
-                        'hash' : String,
                         'domain' : String,
                         'users' : [],
                         'traps' : [],

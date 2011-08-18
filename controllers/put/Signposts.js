@@ -1,7 +1,10 @@
 var controller = require('./Controller');
+
 module.exports = function (App) {
     var collection = "Users";
     var property = "posts";
+    var returnProp = "page";
+    
     return controller(App,
         //Write Method
         function(obj,dWrite) {
@@ -14,7 +17,14 @@ module.exports = function (App) {
             obj.date = new Date();
             obj._id = obj.date.getTime();
             
-            dWrite(collection, userId, property, obj);
+            var updateObj = {};
+            updateObj[property] = obj;
+            dWrite(
+                collection,
+                {_id: pageId },
+                { $addToSet : updateObj },
+                returnProp
+            );
         },
         //Validation Method
         {
