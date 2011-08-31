@@ -3,22 +3,19 @@ module.exports = function (App, write, validate) {
             return new App.$.Deferred(function(dSend) {
                 validate.before(opts, function(results) {
                     if(!results.error) {
-                        if(results.data === null) {
+                        if(results.data === null || results.data == undefined) {
                             results.data = {}; 
                         }
-                        write(opts, function(collectionName, query, update, resultsProp) {
-                            var updateObject = {};
+                        write(opts, function(collectionName, query, resultsProp) {
                             var Coll = new App.mongodb.Collection(App.db.client, collectionName);
-                            Coll.findAndModify(
+                            Coll.findOne(
                                 query,                                                              //Criteria
-                                [],                                                                 //Sort
-                                update,                                                             //Update
-                                { new : true },                                                     //Options
-                                function(err, modified) {                                           //Callback
+                                {},                                                                 //Options
+                                function(err, qResult) {                                            //Callback
                                     if(err) {                                                       //Error (Needs more work)
                                         dSend.resolve(err);
                                     } else {                                                        //Success
-                                        results.data[resultsProp] = modified;
+                                        results.data[resultsProp] = qResult;
                                         dSend.resolve(results.data);
                                     }
                                 }
@@ -28,8 +25,8 @@ module.exports = function (App, write, validate) {
                         dSend.resolve(results);
                     }
                 });
-            }).promise();
+	        }).promise();
 	};
     
-    return service;
+	return service;
 };

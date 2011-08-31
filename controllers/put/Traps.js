@@ -1,4 +1,4 @@
-var controller = require('../BaseController');
+var controller = require('./Controller');
 
 module.exports = function (App) {
     var collection = "Pages";

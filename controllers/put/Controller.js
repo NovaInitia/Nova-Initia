@@ -1,26 +1,23 @@
 module.exports = function (App, write, validate) {
-    var service = {};    
-    service.send = function (opts) {
-            return App.$.Deferred(function(dSend) {
+    var service = function (opts) {
+            return new App.$.Deferred(function(dSend) {
                 validate.before(opts, function(results) {
                     if(!results.error) {
-                        if(results.data == null) {
+                        if(results.data === null) {
                             results.data = {}; 
                         }
-                        write(opts, function(collectionName, collectionId, objName, opts) {
-                            var updateObject = {};
-                            updateObject[objName] = opts;
+                        write(opts, function(collectionName, query, update, resultsProp) {
                             var Coll = new App.mongodb.Collection(App.db.client, collectionName);
                             Coll.findAndModify(
-                                {_id: collectionId},                                                //Criteria
+                                query,                                                              //Criteria
                                 [],                                                                 //Sort
-                                {$addToSet: updateObject },                                         //Update
+                                update,                                                             //Update
                                 { new : true },                                                     //Options
                                 function(err, modified) {                                           //Callback
                                     if(err) {                                                       //Error (Needs more work)
                                         dSend.resolve(err);
                                     } else {                                                        //Success
-                                        results.data[collectionName.toLowerCase().substr(0,collectionName.length - 1)] = modified;
+                                        results.data[resultsProp] = modified;
                                         dSend.resolve(results.data);
                                     }
                                 }
@@ -29,10 +26,9 @@ module.exports = function (App, write, validate) {
                     } else {
                         dSend.resolve(results);
                     }
-		        });
+    	        });
 	        }).promise();
 	};
+    
 	return service;
 };
-
-//Get Collection

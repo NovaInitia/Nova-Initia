@@ -1,17 +1,12 @@
+var WebSocketServer = require("WebSocket-Node").server;
+var events = require('events');
+
 var App = {};
 App = require('./config.js');
 var $ = App.$;
-var Public = {};
-Public.mail = require('./include/Mail')(App);
-Public.spiders = {};
-Public.spiders.put = require('./controllers/put/Spiders')(App);
-Public.traps = require('./controllers/put/Traps')(App);
-Public.barrels = require('./controllers/put/Barrels')(App);
-Public.doorways = require('./controllers/put/Barrels')(App);
-Public.signposts = require('./controllers/put/Signposts')(App);
-Public.arrive = require('./controllers/put/Location')(App);
-Public.depart = require('./controllers/delete/Location')(App);
-
+//delete : require('./controllers/delete/Location')(App)
+//Public.location.get = require('./controllers/get/Location')(App);
+var Router = require('./Dispatcher')(App);
 App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
 
 function Log(msgs, name) {
@@ -32,7 +27,6 @@ function Log(msgs, name) {
 }
 
 function connectionHandler() {
-    console.log("Conn H Open");
     var request = this;
     var apiRequest = JSON.parse(request.content);
     Log(apiRequest, "apiRequest");
@@ -45,8 +39,7 @@ function connectionHandler() {
                     $.Deferred(function(dApiRequest) {
                         var apiRequestParams = method;
                         Log(apiRequestParams, "apiRequestParams");
-                        Log(Public.spiders, "Public");
-                        Public[serviceName][methodName](apiRequestParams).then(function(apiResults) {
+                        Router.observers[serviceName][methodName](apiRequestParams).then(function(apiResults) {
                             Log(apiResults, "apiResults");
                             dApiRequest.resolve(apiResults);
                         });
@@ -78,7 +71,7 @@ new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
     console.log("Create Server");
     
     
-    App.http.createServer(function(req, res) {
+    var server = App.http.createServer(function(req, res) {
         req.addListener('data',function(data) {
             Log(data,"Data Recieved");
             this.content += data;
@@ -94,5 +87,34 @@ new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
                 res.end(JSON.stringify(req.response));
             });
         });
-    }).listen(App.web.port,App.web.host, function(){ console.log("Server Started");});
+    });
+    server.listen(App.web.port,App.web.host, function(){ console.log("Server Started");});
+    
+    var wsServer = new WebSocketServer({
+        httpServer: server,
+        autoAcceptConnections: true
+    });
+
+    wsServer.on('connect', function(connection) {
+        console.log((new Date()) + " Connection accepted.");
+        connection.on('message', function(message) {
+            if (message.type === 'utf8') {
+                var obj = JSON.parse(message.utf8Data);
+                if(obj) {
+                    for(prop in obj) {
+                        Router.dispatcher.emit(prop,obj[prop],connection);
+                    }
+                }
+            }
+            else if (message.type === 'binary') {
+                console.log("Received Binary Message of " + message.binaryData.length + " bytes");
+                connection.sendBytes(message.binaryData);
+            }
+
+        });
+        connection.on('close', function(connection) {
+            console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
+        });
+    });
+    
 });

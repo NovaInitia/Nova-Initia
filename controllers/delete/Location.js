@@ -1,4 +1,4 @@
-var controller = require("../BaseController");
+var controller = require("./Controller");
 var PageHelper = require("../PageHelper");
 module.exports = function (App) {
     var property = "users";

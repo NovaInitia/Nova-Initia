@@ -1,4 +1,4 @@
-var controller = require('../BaseController');
+var controller = require('./Controller');
 var UserHelper = require("../UserHelper");
 module.exports = function (App) {
     var collection = "Pages";
