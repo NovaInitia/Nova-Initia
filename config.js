@@ -7,7 +7,7 @@ module.exports = {
     //IDE Settings
     debug : true,
     
-    //App Connections
+    //Web Connection
     web : {
 	host : "172.21.15.1",
         port : 3080,
@@ -15,7 +15,7 @@ module.exports = {
              gzip : false
         }
     },
-    
+    //DB Connection
     db : {
         name : 'ni',
         host : '127.0.0.1',
@@ -26,12 +26,12 @@ module.exports = {
     util : require('util'),
     
     $ : function() {
-            var jquery = require('jquery');
-            jquery.whenArray = function(arr) {
-                return jquery.when.apply( this, arr );
-            };
-            return jquery;
-        }(),
+	var jquery = require('jquery');
+	jquery.whenArray = function(arr) {
+		return jquery.when.apply( this, arr );
+	};
+	return jquery;
+    }(),
     
     http : require('http'),
     
@@ -55,8 +55,6 @@ module.exports = {
         route : '/page/',
         id : ':val'
     },
-    
-
     
     through : function(d,cb){cb(null,d);},
 
@@ -165,16 +163,13 @@ module.exports = {
             rate: [1,1,1,1],                //Number of signposts given per unit bought.
             experience: 10,
             initialXP: 0,
-            
-            branches: {giver: [{level: 0, branches: 1}
-                       ],
-                       guardian: [{level: 0, branches: 1}
-                       ],
-                       guide: [{level: 0, branches: 1},
-                               {level: 8, branches: 2},
-                               {level: 12, branches: 3},
-                               {level: 20, branches: 4}
-                       ]
+            branches: {
+			giver: [{level: 0, branches: 2}],
+			guardian: [{level: 0, branches: 2}],
+			guide: [{level: 0, branches: 1},
+				{level: 8, branches: 2},
+				{level: 12, branches: 3},
+				{level: 20, branches: 4}]
             }
         }
     }
