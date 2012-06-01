@@ -2,7 +2,8 @@ module.exports = function(mongoose) {
     if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
         var Schema = mongoose.Schema,
         ObjectId = Schema.ObjectId;
-        var SignpostSchema = new Schema({
+        
+        var SignpostModel = {
             '_id' : Number,
             'user' : String,
             'class' : Number,
@@ -12,7 +13,11 @@ module.exports = function(mongoose) {
             'url' : String,
             'title' : String,
             'nsfw' : Boolean
-        });
+        };
+        
+        var SignpostSchema = new Schema(SignpostModel);
+        mongoose.models.base.SignpostModel = SignpostModel;
+        mongoose.model('Signpost',SignpostSchema);
     }
     return mongoose;
 };

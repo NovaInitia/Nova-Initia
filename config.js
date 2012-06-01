@@ -9,7 +9,7 @@ module.exports = {
     
     //Web Connection
     web : {
-	host : "172.21.15.1",
+	    host : "50.57.99.62",
         port : 3080,
         response : {
              gzip : false
@@ -33,9 +33,11 @@ module.exports = {
 	return jquery;
     }(),
     
-    http : require('http'),
+    express : require('express'),
     
-    mongodb : require('mongodb'),
+    mongoose : require('mongoose'),
+    
+    mongooseAdmin : require('mongoose-admin'),
     
     //App Settings
     

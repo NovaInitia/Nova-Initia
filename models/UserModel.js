@@ -1,6 +1,7 @@
 var util = require('util');
 
 module.exports = function(mongoose) {
+
     if(mongoose && mongoose.Schema) {
 
 		//Begin Shorthand Definitions
@@ -10,9 +11,9 @@ module.exports = function(mongoose) {
 
 		//End Shorthand Definitions
 
-		var UserSchema = new Schema({
+        var UserModel = {
             '_id' : String,
-		    'pass' : String,    //Password for account?
+            'pass' : String,    //Password for account?
 		    'ldate' : Date,
 		    'key' : String,
             'armor' : {
@@ -77,7 +78,10 @@ module.exports = function(mongoose) {
 		    'cmt' : String,
 		    'stamps' : [],
             'mail' : []
-		});
+		};
+        
+		var UserSchema = new Schema(UserModel);
+
         
         UserSchema.virtual('awardXP').set(function(obj) {
 	        switch(obj.cls) {
@@ -115,9 +119,10 @@ module.exports = function(mongoose) {
 
 
         
-        UserSchema.virtual('toggleShield').set(function() {
+        UserSchema.virtual('toggleShield').set(function(n) {
+            console.log("-----------------"+this.armor.use+"-------------------");
 	        this.armor.use = !this.armor.use;
-	        if(this.amror.use && parseInt(this.armor.hits,10) === 0) {
+	        if(this.armor.use && parseInt(this.armor.hits,10) === 0) {
 			    if(parseInt(this.shields, 10) > 0) {
 	                this.shields.decrement(1);
                     this.armor.hits.increment(1);
@@ -129,7 +134,8 @@ module.exports = function(mongoose) {
             }
 	        this.save();
         });
-
+        
+        mongoose.UserModel = UserModel;
 		mongoose.model('User',UserSchema);
 	} //End If
 	return mongoose;

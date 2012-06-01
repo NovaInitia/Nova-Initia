@@ -8,15 +8,18 @@ module.exports = function(mongoose) {
                 ObjectId = Schema.ObjectId;
                 //End Shorthand Definitions
 
-                var DomainSchema = new Schema({
+                var DomainModel = {
                         '_id' : String,
                         'uri' : String,
                         'pages' : [],
                         'users' : [],
                         'hits' : Number,
                         'domains' : []
-                });
+                };
+                
+                var DomainSchema = new Schema(DomainModel);
 
+                mongoose.models.base.DomainModel = DomainModel;
                 mongoose.model('Domain',DomainSchema);
 
         } //End If

@@ -11,8 +11,7 @@ module.exports = function(mongoose) {
 
 
 
-                
-                var SignpostSchema = new Schema({
+                var ToolModel = {
                     '_id' : Number,
                     'user' : String,
                     'date' : Date,
@@ -22,9 +21,13 @@ module.exports = function(mongoose) {
                     'title' : String,
                     'nsfw' : Boolean
                     
-                });
+                };
+                
+                var ToolSchema = new Schema(ToolModel);
 
-                mongoose.model('Signpost',SignpostSchema);
+                mongoose.models.base.ToolModel = ToolModel;
+                
+                mongoose.model('Tool',ToolSchema);
                 
 
         } //End If

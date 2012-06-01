@@ -5,11 +5,14 @@ module.exports = function(mongoose) {
 		var Schema = mongoose.Schema,
 			ObjectId = Schema.ObjectId;
 
-		var ClassSchema = new Schema({
+        var ClassModel = {
                 '_id' : Number,
                 'name' : String
-		});
-
+        };
+        
+		var ClassSchema = new Schema(ClassModel);
+        
+        mongoose.models.base.ClassModel = ClassModel;
 		mongoose.model('Class', ClassSchema);
 	}
 	return mongoose;

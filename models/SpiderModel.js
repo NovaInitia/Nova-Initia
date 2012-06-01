@@ -2,13 +2,16 @@ module.exports = function(mongoose) {
     if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
         var Schema = mongoose.Schema,
         ObjectId = Schema.ObjectId;
-        var SpiderSchema = new Schema({
+        
+        var SpiderModel = {
             '_id' : Number,
             'user' : String,
             'class' : Number,
             'date' : Date,
             'level' : Number
-        });    
+        };
+        
+        var SpiderSchema = new Schema(SpiderModel);    
         SpiderSchema.virtual("awardableXP").set(function (user) {   //When called, returns the amount of XP the placer can gain.
             var age = new Date().getTime() - this.date.getTime();   //Number of milliseconds since the spider was placed.
             var exp = NI.tools.spiders.experience.sort(function (a,b) {return a.age - b.age;});     //Settings array of {age: <days>, amount: <XP to award>}. Sorted so lower age is first.
@@ -17,14 +20,16 @@ module.exports = function(mongoose) {
                     return exp[i].xp;   //Return the XP to award.
             }
             return 0;   //Whoops, none matched.
-        })
+        });
         SpiderSchema.virtual("explode").set(function (user) {
             
-        })
+        });
         SpiderSchema.virtual("backfire").set(function (user) {
             
-        })
+        });
+        
+        mongoose.models.base.SpiderModel = SpiderModel;
         mongoose.model('Spider',SpiderSchema);
     }
     return mongoose;
-}
+};

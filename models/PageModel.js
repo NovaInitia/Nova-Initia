@@ -7,7 +7,7 @@ module.exports = function(mongoose) {
                 var Schema = mongoose.Schema;
                 //End Shorthand Definitions
 
-                var PageSchema = new Schema({
+                var PageModel = {
                         '_id' : String,
                         'domain' : String,
                         'users' : [],
@@ -17,7 +17,11 @@ module.exports = function(mongoose) {
                         'doorways' : [],
                         'signposts' : [],
                         'parts' : []
-                });
+                };
+                
+                var PageSchema = new Schema(PageModel);
+                
+                mongoose.models.base.PageModel = PageModel;
 
                 mongoose.model('Page',PageSchema);
 

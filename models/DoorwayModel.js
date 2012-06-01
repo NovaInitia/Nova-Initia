@@ -2,7 +2,7 @@ module.exports = function(mongoose) {
     if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
         var Schema = mongoose.Schema,
         ObjectId = Schema.ObjectId;
-        var DoorwaySchema = new Schema({
+        var DoorwayModel = {
             '_id' : Number,
             'user' : String,
             'date' : Date,
@@ -16,7 +16,11 @@ module.exports = function(mongoose) {
             'votes' : Number,
             'count' : Number,
             'chain' : Number
-        });
+        };
+        
+        var DoorwaySchema = new Schema(DoorwayModel);
+        
+        mongoose.models.base.DoorwayModel = DoorwayModel;
         mongoose.model('Doorway',DoorwaySchema);
     }
     return mongoose;

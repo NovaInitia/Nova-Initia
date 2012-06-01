@@ -8,8 +8,8 @@ module.exports = function(mongoose) {
                 var Schema = mongoose.Schema,
                 ObjectId = Schema.ObjectId;
                 //End Shorthand Definitions
-
-                var MessageSchema = new Schema({
+                
+                var MessageModel = {
                         '_id' : Number,
                         'to' : String,
                         'from' : String,
@@ -18,8 +18,12 @@ module.exports = function(mongoose) {
                         'domain' : String,
                         'date' : Date,
                         'read' : Boolean
-                });
+                };
 
+                var MessageSchema = new Schema(MessageModel);
+
+                mongoose.models.base.MessageModel = MessageModel;
+                
                 mongoose.model('Message',MessageSchema);
 
         } //End If

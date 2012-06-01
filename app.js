@@ -1,120 +1,152 @@
-var WebSocketServer = require("WebSocket-Node").server;
-var events = require('events');
-
 var App = {};
 App = require('./config.js');
+var openid = require('openid');
+var url = require('url');
+var querystring = require('querystring');
+var relyingParty = new openid.RelyingParty(
+    'http://dev2.nova-initia.com:3080/verify', // Verification URL (yours)
+    null, // Realm (optional, specifies realm for OpenID authentication)
+    false, // Use stateless verification
+    false, // Strict mode
+    []); // List of extensions to enable and include
+
+App.mongoose.models.base = {};
 var $ = App.$;
-//delete : require('./controllers/delete/Location')(App)
-//Public.location.get = require('./controllers/get/Location')(App);
-var Router = require('./Dispatcher')(App);
-App.DataServer= new App.mongodb.Server(App.db.host,App.db.port, {});
+var mongooseTypes = require("mongoose-types");
 
-function Log(msgs, name) {
-    console.log("-"+name+"-");
-    function writeToConsole(msg) {
-        console.log(msg);
-        App.util.inspect(msg);
-    }
-    if(App.debug) {
-        if(Array.isArray(msgs))
-        {
-            msgs.forEach(writeToConsole);
-        } else {
-            writeToConsole(msgs);
-        }
-    }
-    console.log("-/"+name+"-");
-}
+App.mongoose.connect("mongodb://"+App.db.host+"/"+App.db.name);
 
-function connectionHandler() {
-    var request = this;
-    var apiRequest = JSON.parse(request.content);
-    Log(apiRequest, "apiRequest");
-    return $.Deferred(function(dConnection){
-        var dResponses = [];
-        $.map(apiRequest, function(service, serviceName) {
-            $.map(service, function(method, methodName) {
-                Log(method, serviceName+":"+methodName);
-                dResponses.push(
-                    $.Deferred(function(dApiRequest) {
-                        var apiRequestParams = method;
-                        Log(apiRequestParams, "apiRequestParams");
-                        Router.observers[serviceName][methodName](apiRequestParams).then(function(apiResults) {
-                            Log(apiResults, "apiResults");
-                            dApiRequest.resolve(apiResults);
-                        });
-                    }).promise()
-                );
-            });
-        });
-        $.when.apply(this,dResponses).then(function(){
-            Log(arguments, "when:responseData");
-            request.response = {};
-            if(arguments) {
-                $.each(arguments, function(i,obj) {
-                    $.extend(request.response, obj);
-                });
-            }
-            //request.response = sendSet;
-            dConnection.resolve();
-        });
-    }).promise();
-}
+mongooseTypes.loadTypes(App.mongoose);
 
-new App.mongodb.Db(App.db.name,App.DataServer,{}).open(function (error,client) {
-    console.log("DB Open");
-    if(error) {
-        console.log("DB Error");
-        throw error;
-    }
-    App.db.client = client;
-    console.log("Create Server");
-    
-    
-    var server = App.http.createServer(function(req, res) {
-        req.addListener('data',function(data) {
-            Log(data,"Data Recieved");
-            this.content += data;
-        });
-        Log(req, "Request");
-        req.setEncoding("utf8");
-        req.content = "";
-        
-        req.addListener("end", function() {
-            connectionHandler.apply(this).then(function() {
-                res.statusCode = 200;
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify(req.response));
-            });
-        });
-    });
-    server.listen(App.web.port,App.web.host, function(){ console.log("Server Started");});
-    
-    var wsServer = new WebSocketServer({
-        httpServer: server,
-        autoAcceptConnections: true
-    });
+App.mongoose = require('./models/BarrelModel.js')(App.mongoose);
+App.mongoose = require('./models/ClassModel.js')(App.mongoose);
+App.mongoose = require('./models/DomainModel.js')(App.mongoose);
+App.mongoose = require('./models/DoorwayModel.js')(App.mongoose);
+App.mongoose = require('./models/MessageModel.js')(App.mongoose);
+App.mongoose = require('./models/PageModel.js')(App.mongoose);
+App.mongoose = require('./models/SignpostModel.js')(App.mongoose);
+App.mongoose = require('./models/SpiderModel.js')(App.mongoose);
+App.mongoose = require('./models/ToolModel.js')(App.mongoose);
+App.mongoose = require('./models/TrapModel.js')(App.mongoose);
+App.mongoose = require('./models/UserModel.js')(App.mongoose);
 
-    wsServer.on('connect', function(connection) {
-        console.log((new Date()) + " Connection accepted.");
-        connection.on('message', function(message) {
-            if (message.type === 'utf8') {
-                var obj = JSON.parse(message.utf8Data);
-                if(obj) {
-                    for(prop in obj) {
-                        Router.dispatcher.emit(prop,obj[prop],connection);
-                    }
-                }
-            }
-            else if (message.type === 'binary') {
-                console.log("Received Binary Message of " + message.binaryData.length + " bytes");
-                connection.sendBytes(message.binaryData);
-            }
 
-        });
-        connection.on('close', function(connection) {
-            console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
-        });
-    });
-    
+var server = App.express.createServer();
+server.use(App.express.logger());
+server.use(App.express.bodyParser());
+server.use(App.express.cookieParser());
+server.use(server.router);
+var validKeys = [];
+
+server.get('/auth', function(req, res) {
+    var lastkey = randomString(64);
+    validKeys.push(lastkey);
+    res.send(lastkey);
 });
+
+
+server.post('/login', function(req, res) {
+	var data;
+	var UserModel = App.mongoose.model('User');
+	if(req.body) {
+		data = req.body;
+		if(data && typeof(data.lastkey)!='undefined') {
+			if(validKeys.indexOf(data.lastkey)>-1) {
+				validKeys.splice(validKeys.indexOf(data.lastkey),1);
+				UserModel.findOne({"_id":data.user,"pass":data.pass}, function(err, doc) {
+					var newKey = randomString(64);
+					doc.key = data.lastkey = newKey;
+					doc.save();
+					res.send(newKey);
+				});
+			}
+		} else {
+			data = {};
+			data.lastkey = '';
+			res.send(data.lastkey);
+		}
+	}
+});
+
+
+
+server.get('/signposts/:id', function (req, res) {
+	var signpostId = req.params.id;
+	var SignpostModel = App.mongoose.model('Signpost');
+	SignpostModel.findOne({'_id' : signpostId},function(err, docs) {
+		res.send(docs);
+	});
+});
+
+server.get('/signposts', function (req, res) {
+    var SignpostModel = App.mongoose.model('Signpost');
+    SignpostModel.find({},function(err, docs) {
+        res.send(docs);
+    });
+});
+
+
+server.put('/signposts', function (req, res) {
+    var SignpostModel = App.mongoose.model('Signpost');
+    var newSignpost = new SignpostModel(req.body);
+    res.send(newSignpost.save());
+});
+
+server.get('/users', function (req, res) {
+    var UserModel = App.mongoose.model('User');
+    UserModel.find({},function(err, docs) {
+        res.send(docs);
+    });
+});
+
+server.get('/users/:id', function (req, res) {
+    var userId = req.params.id;
+    var UserModel = App.mongoose.model('User');
+    UserModel.findOne({'_id' : userId },function(err, docs) {
+        res.send(docs);
+    });
+});
+
+server.get('/users/:id/toggleShield', function (req, res) {
+    var userId = req.params.id;
+    var UserModel = App.mongoose.model('User');
+    console.log("-------------TOGGLE--------------");
+    UserModel.findOne({'_id' : userId },function(err, docs) {
+        foundUser = new UserModel(docs);
+        foundUser.set("toogleShield","");
+        console.log(JSON.stringify(foundUser));
+        res.send(foundUser);
+    });
+});
+
+
+server.listen(App.web.port);
+
+var randomString = function (bits) {
+  var chars, rand, i, ret;
+  
+  chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'; 
+  ret = '';
+  
+  // in v8, Math.random() yields 32 pseudo-random bits (in spidermonkey it gives 53)
+  while (bits > 0) {
+    // 32-bit integer
+    rand = Math.floor(Math.random() * 0x100000000); 
+    // base 64 means 6 bits per character, so we use the top 30 bits from rand to give 30/6=5 characters.
+    for (i = 26; i > 0 && bits > 0; i -= 6, bits -= 6) {
+      ret += chars[0x3F & rand >>> i];
+    }
+  }
+  
+  return ret;
+};
+/*
+var admin = App.mongooseAdmin.createAdmin('mongodb://localhost/ni', {port : 8001 });
+admin.ensureUserExists('admin', '');
+admin.registerModel('Signpost', App.mongoose.SignpostModel, {list : ['_id','user','class','date','level','cmt','url','title','nsfw']});
+admin.registerModel('User', App.mongoose.UserModel,{ list : ['_id','pass','ldate','key','armor','sg','traps','barrels','spiders','shields','doorways','signposts','avatar','date','class','stats','email','parts','events','first','last','mod','karma','active','location','cmt','stamps','mail']});
+admin.registerModel('Page', App.mongoose.PageModel, { list : ['_id','domain','users', 'traps','barrels','spiders','doorways','signposts','parts']});
+admin.registerModel('Domain', App.mongoose.DomainModel, { list : ['_id','uri','pages','users','hits','domains']});
+admin.registerModel('Class', App.mongoose.ClassModel, { list : ['_id','name']});
+*/
+

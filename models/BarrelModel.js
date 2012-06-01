@@ -2,7 +2,7 @@ module.exports = function(mongoose) {
     if(mongoose && mongoose.Schema && mongoose.Schema.ObjectId) {
         var Schema = mongoose.Schema,
         ObjectId = Schema.ObjectId;
-        var BarrelSchema = new Schema({
+        var BarrelModel = {
             '_id' : Number,
             'user' : String,
             'class' : Number,
@@ -20,17 +20,22 @@ module.exports = function(mongoose) {
             'cmt' : String,         //Comment on the outside of the barrel?
             'durability' : Number,  //The number of attempts at recycling that can be performed on this barrel.
             'visitors' : []         //Array of users who have checked the barrel while it was empty.
-        });
+        };
+        
+        var BarrelSchema = new Schema(BarrelModel);
+        
+        mongoose.models.base.BarrelModel = BarrelModel
         mongoose.model('Barrel',BarrelSchema);
+        
+        BarrelSchema.virtual("recycle").set(function (user) {   //Returns true or false regarding an attempt to recycle.
+        
+        });
+        BarrelSchema.virtual("recyclable").set(function (user) {    //Returns true or false. If true, subtracts one from the 'durability' of the barrel.
+        
+        });
+        BarrelSchema.virtual("open").set(function (user) {    //Passed user function and updates it with the contents of the barrel.
+        
+        });
     }
-    BarrelSchema.virtual("recycle").set(function (user) {   //Returns true or false regarding an attempt to recycle.
-        
-    });
-    BarrelSchema.virtual("recyclable").set(function (user) {    //Returns true or false. If true, subtracts one from the 'durability' of the barrel.
-        
-    });
-    BarrelSchema.virtual("open").set(function (user) {    //Passed user function and updates it with the contents of the barrel.
-        
-    });
     return mongoose;
 };
