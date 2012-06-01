@@ -110,7 +110,6 @@ server.get('/users/:id', function (req, res) {
 server.get('/users/:id/toggleShield', function (req, res) {
     var userId = req.params.id;
     var UserModel = App.mongoose.model('User');
-    console.log("-------------TOGGLE--------------");
     UserModel.findOne({'_id' : userId },function(err, docs) {
         foundUser = new UserModel(docs);
         foundUser.set("toogleShield","");
@@ -140,13 +139,3 @@ var randomString = function (bits) {
   
   return ret;
 };
-/*
-var admin = App.mongooseAdmin.createAdmin('mongodb://localhost/ni', {port : 8001 });
-admin.ensureUserExists('admin', '');
-admin.registerModel('Signpost', App.mongoose.SignpostModel, {list : ['_id','user','class','date','level','cmt','url','title','nsfw']});
-admin.registerModel('User', App.mongoose.UserModel,{ list : ['_id','pass','ldate','key','armor','sg','traps','barrels','spiders','shields','doorways','signposts','avatar','date','class','stats','email','parts','events','first','last','mod','karma','active','location','cmt','stamps','mail']});
-admin.registerModel('Page', App.mongoose.PageModel, { list : ['_id','domain','users', 'traps','barrels','spiders','doorways','signposts','parts']});
-admin.registerModel('Domain', App.mongoose.DomainModel, { list : ['_id','uri','pages','users','hits','domains']});
-admin.registerModel('Class', App.mongoose.ClassModel, { list : ['_id','name']});
-*/
-
