@@ -40,4 +40,6 @@ export interface IBalanceTable {
   ): { tool: ToolType; quantity: number };
   inventoryCap(highestLevel: number): number;
   pagePlacementCap(): number;
+  owningClassOf(tool: ToolType): PlayerClass;
+  maxLevel(): number;
 }

@@ -1,4 +1,4 @@
-import { NotImplemented } from '../domain/errors.js';
+import { InvalidXpAmount, InvalidSgDelta, UnknownClassProgress } from '../domain/errors.js';
 import type { Transaction } from '../contracts/unitOfWork.js';
 import type { IBalanceTable } from '../contracts/balance.js';
 import type {
@@ -26,15 +26,25 @@ export class ProgressionModule {
     cause: LedgerCause,
     placementId: PlacementId | null
   ): Promise<void> {
-    await this.progress.get(player.id, playerClass);
-    await this.progress.save({} as ClassProgress, tx);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new InvalidXpAmount(amount);
+    }
+
+    const progress = await this.progress.get(player.id, playerClass);
+    if (!progress) {
+      throw new UnknownClassProgress(player.id, playerClass);
+    }
+
+    progress.experience += amount;
+    await this.progress.save(progress, tx);
+
     await this.ledger.append(
       {
         playerId: player.id,
         resourceKind: 'xp',
         playerClass,
         appliedDelta: amount,
-        balanceAfter: 0,
+        balanceAfter: progress.experience,
         cause,
         placementId,
         counterpartyId: null,
@@ -43,7 +53,6 @@ export class ProgressionModule {
       },
       tx
     );
-    throw new NotImplemented('ProgressionModule.awardXp');
   }
 
   async adjustKarma(
@@ -52,15 +61,31 @@ export class ProgressionModule {
     tool: ToolType,
     placementId: PlacementId | null
   ): Promise<void> {
-    this.balance.karmaDeltaFor(tool);
+    if (this.balance.owningClassOf(tool) !== player.activeClass) {
+      return;
+    }
+
+    const delta = this.balance.karmaDeltaFor(tool);
+    const next = Math.min(
+      Math.max(player.karma + delta, this.balance.constant('karma_min')),
+      this.balance.constant('karma_max')
+    );
+
+    const applied = next - player.karma;
+    if (applied === 0) {
+      return;
+    }
+
+    player.karma = next;
     await this.players.save(player, tx);
+
     await this.ledger.append(
       {
         playerId: player.id,
         resourceKind: 'karma',
         playerClass: null,
-        appliedDelta: 0,
-        balanceAfter: 0,
+        appliedDelta: applied,
+        balanceAfter: next,
         cause: 'tool_use',
         placementId,
         counterpartyId: null,
@@ -69,7 +94,6 @@ export class ProgressionModule {
       },
       tx
     );
-    throw new NotImplemented('ProgressionModule.adjustKarma');
   }
 
   async adjustSg(
@@ -80,14 +104,27 @@ export class ProgressionModule {
     placementId: PlacementId | null,
     counterpartyId: PlayerId | null
   ): Promise<number> {
+    if (!Number.isInteger(delta)) {
+      throw new InvalidSgDelta(delta);
+    }
+
+    const next = Math.max(player.sg + delta, 0);
+    const applied = next - player.sg;
+
+    if (applied === 0) {
+      return 0;
+    }
+
+    player.sg = next;
     await this.players.save(player, tx);
+
     await this.ledger.append(
       {
         playerId: player.id,
         resourceKind: 'sg',
         playerClass: null,
-        appliedDelta: delta,
-        balanceAfter: 0,
+        appliedDelta: applied,
+        balanceAfter: next,
         cause,
         placementId,
         counterpartyId,
@@ -96,10 +133,24 @@ export class ProgressionModule {
       },
       tx
     );
-    throw new NotImplemented('ProgressionModule.adjustSg');
+
+    return applied;
   }
 
-  canAdvance(_player: Player, _progress: ClassProgress): boolean {
-    throw new NotImplemented('ProgressionModule.canAdvance');
+  canAdvance(player: Player, progress: ClassProgress): boolean {
+    if (progress.level >= this.balance.maxLevel()) {
+      return false;
+    }
+
+    const nextLevel = this.balance.levelDefinition(progress.level + 1);
+    if (progress.experience < nextLevel.experienceThreshold) {
+      return false;
+    }
+
+    if (player.sg < nextLevel.sgCost) {
+      return false;
+    }
+
+    return true;
   }
 }

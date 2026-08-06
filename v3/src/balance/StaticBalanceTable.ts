@@ -238,4 +238,16 @@ export class StaticBalanceTable implements IBalanceTable {
   pagePlacementCap(): number {
     return this.constant('page_placement_cap');
   }
+
+  owningClassOf(tool: ToolType): PlayerClass {
+    return this.tool(tool).owningClass;
+  }
+
+  maxLevel(): number {
+    let max = 0;
+    for (const level of this.levels.keys()) {
+      if (level > max) max = level;
+    }
+    return max;
+  }
 }

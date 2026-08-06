@@ -37,17 +37,26 @@ round trip is the game; everything else in scope exists to support it.
 
 ## Milestones
 
+*Revised 2026-08-06 when a PostgreSQL server became available — see A1.*
+
 - **M0 — walking skeleton.** In-memory repositories, `ProgressionModule`, and `IdentityModule`
   registration and authentication. A scripted scenario creates a player with the D22 starting
   state and authenticates them. *(`IBalanceTable` is already complete — 49 tests.)*
-- **M1 — the core loop.** `GeographyModule`, `PlacementModule`, `EncounterModule`. A player
-  enters a page, places each of the five placeable tools, and trips a trap and a spider.
-- **M2 — the economy.** `EconomyModule`: purchase, level purchase, and the stipend as a
-  scheduled job with subject-level idempotency.
-- **M3 — persistence.** PostgreSQL repositories, migrations from `SCHEMA-01`, audit triggers,
+- **M1 — persistence.** PostgreSQL repositories, migrations from `SCHEMA-01`, audit triggers,
   and the balance tables under D23.
+- **M2 — the core loop.** `GeographyModule`, `PlacementModule`, `EncounterModule`, built
+  directly against PostgreSQL. A player enters a page, places each of the five placeable tools,
+  and trips a trap and a spider.
+- **M3 — the economy.** `EconomyModule`: purchase, level purchase, and the stipend as a
+  scheduled job with subject-level idempotency.
 - **M4 — the API boundary.** HTTP surface, session resolution, and the request-scoped NSFW and
   normalisation-version handling.
+
+Persistence moved from last to second so that the features whose correctness *depends* on
+transactions, advisory locks and audit triggers — the placement cap, the ledger, the stipend
+job — are built against the real store and verified once, rather than built on in-memory
+substitutes and re-verified retroactively. That retroactive re-verification was the specific
+debt A1 accepted; the server's arrival lets the project decline it instead.
 
 ## Definition of done
 
@@ -77,6 +86,21 @@ accepted and named: in-memory repositories cannot exercise transactional atomici
 triggers, or the advisory locks, so **M3 must re-verify every atomicity guarantee in TRD §8.2
 rather than assume it**. A non-blocking `REQUESTS.md` item asks for a server before M3.
 
+> **Resolved 2026-08-06, same day.** The user provisioned a PostgreSQL server; `pg_isready`
+> reports it accepting connections on `/var/run/postgresql:5432`. Persistence therefore moves
+> from M3 to M1 (see Milestones) and the accepted risk above is retired rather than carried.
+> In-memory repositories survive only as fast test doubles for M0, and are built *only* for the
+> interfaces a module actually consumes — not the whole of `contracts/repositories.ts`, which
+> would be speculative.
+>
+> One prerequisite remains: the server has **no role for the `stephen` account**, so nothing
+> can connect yet. Raised in `REQUESTS.md`; blocking for M1 only, not for M0.
+>
+> A second consequence to decide at M1, not now: PostgreSQL access requires the `pg` driver,
+> which would be this project's **first runtime dependency** and a deliberate exception to the
+> zero-dependency rule in `CLAUDE.md`. That rule already anticipates it — "adding any dependency
+> requires a spec that names it" — and the M1 spec will name it.
+
 **A2 — Parcel 2 is already complete.** `StaticBalanceTable` and its seed data shipped before this
 charter, with 49 passing tests. Cycle 1 therefore begins at parcel 1 (`ProgressionModule`), not
 at a skeleton.
@@ -93,6 +117,12 @@ experience and karma are all ledgered**.
 **A5 — OPEN-14 (text fragments) takes its standing default:** fragments are stripped, both named
 anchors and `#:~:text=` directives. No behaviour depends on the decision, so it does not block.
 
-**A6 — Legacy code is frozen, not deleted.** `CODEBASE.md` documents it; the JSON fixture store
-and its 51 tests remain runnable. No cycle may modify anything outside `v3/` and the state files
-without a roadmap item saying so.
+**A6 — Legacy code is frozen, not deleted.** `CODEBASE.md` documents it. No cycle may modify
+anything outside `v3/` and the state files without a roadmap item saying so.
+
+> **Amended 2026-08-06.** This originally promised the JSON fixture store and its 51 tests
+> "remain runnable". They do not: the user removed the vendored `node_modules/`, and `config.js`
+> requires the 2011 `express` eagerly, so the legacy suite now fails at import. The promise is
+> reduced to *archived and restorable* — every file remains in history at `047c23d`, and
+> `git archive 047c23d node_modules | tar -x` brings them back to disk without re-tracking them.
+> Nothing in v3 depends on them.
