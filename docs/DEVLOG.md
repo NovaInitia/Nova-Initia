@@ -84,3 +84,55 @@ One entry per cycle, newest last. This file is the loop's judgment; `ROADMAP.md`
   half-implemented where it would have looked finished.
 - **Continue?** Yes. M0 is two slices from done and the next one, `IdentityModule`, is where
   credential hashing lands — the first genuinely security-sensitive slice of the project.
+
+---
+
+## Cycle 2 — 2026-08-06 — IdentityModule
+
+- **Shipped:** `register`, `authenticate`, `resolveSession`, `revokeSession`,
+  `getPublicProfile`; in-memory inventory, armor and session repositories. **147 tests, 0 fail**,
+  typecheck clean from a wiped `dist/`.
+- **Security decisions were made in the spec, not by the implementer** — scrypt at
+  `N=32768, r=8, p=1, keylen=64` with an explicit `maxmem: 64MB` (Node's 32MB default throws at
+  this cost), 16-byte random salt, and the self-describing storage format
+  `scrypt$N$r$p$salt$hash` so cost can be raised later without invalidating existing hashes.
+  Verification re-derives with the *stored* parameters and length-guards before
+  `timingSafeEqual`, which throws on unequal lengths.
+- **Session tokens are 256-bit random and stored only as sha256.** Using a fast hash here is
+  correct and is not an inconsistency with scrypt above: the token is uniform randomness, not a
+  low-entropy human secret, so it needs no key stretching. Recorded because it looks like a
+  defect to anyone reviewing quickly, and will keep looking like one.
+- **Two stub-contract changes.** `IdentityModule` had no ledger dependency, so D22's starting
+  state could not be ledgered and the "sum equals balance" invariant would have been false for
+  every player until their first tool use; `ILedgerRepository` added. `register`/`authenticate`
+  now also return the raw token, which is deliberately never stored and so cannot be recovered
+  afterwards.
+- **Review, verified against live reproductions rather than the test suite:** cross-player
+  session revocation blocked; `PublicProfile` carries exactly seven keys and none of
+  `credentialHash`/`email`/`sg`/`karma`/`isModerator`/`isOperator`; `resolveSession` returns
+  `null` — never throws — on empty, garbage, path-traversal and 10k-character tokens; the same
+  credential registered twice produces different stored hashes; sg and karma ledgers both sum
+  to the balance at birth; D22 inventory is 10/10 in-class and 5 across the other four,
+  asserted through `owningClassOf` rather than hardcoded tool ids.
+- **One defect, and it was the *unreported* kind.** Ids were generated with
+  `randomBytes(16).toString('hex')` instead of `randomUUID()`, and the report did not mention
+  the deviation. `SCHEMA-01` declares these as `uuid` columns — and PostgreSQL *accepts* bare
+  32-hex, so this would not have failed at M1; it would have silently produced ids that are not
+  valid v4 UUIDs and match nothing else in the system. Fixed, with a format assertion added.
+  **Lesson: a deviation that still "works" is more dangerous than one that breaks the build,
+  and an implementer's silence is not evidence of conformance.**
+- **Lesson — measure before reporting a timing attack.** First measurement showed unknown-name
+  authentication 58ms slower than wrong-credential, which reads exactly like the username
+  enumeration oracle the dummy-hash mitigation exists to prevent. With warmup and medians over
+  25 samples the gap reversed sign (−7.4%): the original figure was the one-time lazy dummy-hash
+  computation plus JIT noise. Both paths do exactly one scrypt. Had I filed it from the first
+  number, a correct mitigation would have been "fixed".
+- **Mutation-tested the highest-risk claim** (now standard practice, per cycle 1). Commenting
+  out the inventory branch of `restore()` correctly failed `rolled back transaction includes
+  inventory`. The rollback tests are real.
+- **Known gap, deferred to M1 by necessity:** `register` check-then-inserts on name uniqueness.
+  No in-memory store can make that safe; it needs a unique constraint on `player.name`, now
+  recorded on roadmap item 2.
+- **Continue?** Yes. One slice from M0 complete. Note for whoever runs cycle 3: the scenario
+  harness is the first artefact a human is meant to *read the output of*, so it should print
+  observable state legibly rather than assert.

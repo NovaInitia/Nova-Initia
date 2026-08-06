@@ -1,30 +1,42 @@
-import { NotImplemented, ConcurrentUnitOfWork } from '../domain/errors.js';
+import { NotImplemented, ConcurrentUnitOfWork, NegativeInventory } from '../domain/errors.js';
 import type { Transaction, IUnitOfWork } from '../contracts/unitOfWork.js';
 import type {
   IPlayerRepository,
   IClassProgressRepository,
-  ILedgerRepository
+  ILedgerRepository,
+  IInventoryRepository,
+  IArmorRepository,
+  ISessionRepository
 } from '../contracts/repositories.js';
 import type { PlayerId } from '../domain/ids.js';
-import type { PlayerClass } from '../domain/enums.js';
-import type { Player, ClassProgress } from '../domain/player.js';
+import type { PlayerClass, ToolType } from '../domain/enums.js';
+import type { Player, ClassProgress, Inventory, Armor, Session } from '../domain/player.js';
 import type { LedgerEntry } from '../domain/progression.js';
 
 export class InMemoryDatabase {
   private players: Map<PlayerId, Player> = new Map();
   private classProgress: Map<string, ClassProgress> = new Map();
   private ledger: Map<PlayerId, LedgerEntry[]> = new Map();
+  private inventory: Map<PlayerId, Map<ToolType, number>> = new Map();
+  private armor: Map<PlayerId, Armor> = new Map();
+  private sessions: Map<string, Session> = new Map();
 
   reset(): void {
     this.players.clear();
     this.classProgress.clear();
     this.ledger.clear();
+    this.inventory.clear();
+    this.armor.clear();
+    this.sessions.clear();
   }
 
   snapshot(): {
     players: Map<PlayerId, Player>;
     classProgress: Map<string, ClassProgress>;
     ledger: Map<PlayerId, LedgerEntry[]>;
+    inventory: Map<PlayerId, Map<ToolType, number>>;
+    armor: Map<PlayerId, Armor>;
+    sessions: Map<string, Session>;
   } {
     const playersCopy = new Map<PlayerId, Player>();
     for (const [id, player] of this.players) {
@@ -41,13 +53,31 @@ export class InMemoryDatabase {
       ledgerCopy.set(id, entries.map((e) => deepCopyLedgerEntry(e)));
     }
 
-    return { players: playersCopy, classProgress: classPCopy, ledger: ledgerCopy };
+    const inventoryCopy = new Map<PlayerId, Map<ToolType, number>>();
+    for (const [id, counts] of this.inventory) {
+      inventoryCopy.set(id, new Map(counts));
+    }
+
+    const armorCopy = new Map<PlayerId, Armor>();
+    for (const [id, armor] of this.armor) {
+      armorCopy.set(id, deepCopyArmor(armor));
+    }
+
+    const sessionsCopy = new Map<string, Session>();
+    for (const [id, session] of this.sessions) {
+      sessionsCopy.set(id, deepCopySession(session));
+    }
+
+    return { players: playersCopy, classProgress: classPCopy, ledger: ledgerCopy, inventory: inventoryCopy, armor: armorCopy, sessions: sessionsCopy };
   }
 
   restore(snapshot: {
     players: Map<PlayerId, Player>;
     classProgress: Map<string, ClassProgress>;
     ledger: Map<PlayerId, LedgerEntry[]>;
+    inventory: Map<PlayerId, Map<ToolType, number>>;
+    armor: Map<PlayerId, Armor>;
+    sessions: Map<string, Session>;
   }): void {
     this.players.clear();
     for (const [id, player] of snapshot.players) {
@@ -62,6 +92,21 @@ export class InMemoryDatabase {
     this.ledger.clear();
     for (const [id, entries] of snapshot.ledger) {
       this.ledger.set(id, entries.map((e) => deepCopyLedgerEntry(e)));
+    }
+
+    this.inventory.clear();
+    for (const [id, counts] of snapshot.inventory) {
+      this.inventory.set(id, new Map(counts));
+    }
+
+    this.armor.clear();
+    for (const [id, armor] of snapshot.armor) {
+      this.armor.set(id, deepCopyArmor(armor));
+    }
+
+    this.sessions.clear();
+    for (const [id, session] of snapshot.sessions) {
+      this.sessions.set(id, deepCopySession(session));
     }
   }
 
@@ -115,6 +160,57 @@ export class InMemoryDatabase {
     const result = entries.slice().reverse().slice(0, clampedLimit);
     return result.map((e) => deepCopyLedgerEntry(e));
   }
+
+  getInventory(playerId: PlayerId): Map<ToolType, number> {
+    const counts = this.inventory.get(playerId);
+    return counts ? new Map(counts) : new Map();
+  }
+
+  adjustInventory(playerId: PlayerId, tool: ToolType, delta: number): void {
+    const counts = this.inventory.get(playerId) ?? new Map();
+    const current = counts.get(tool) ?? 0;
+    const next = current + delta;
+    if (next < 0) {
+      throw new NegativeInventory(tool);
+    }
+    counts.set(tool, next);
+    this.inventory.set(playerId, counts);
+  }
+
+  getArmor(playerId: PlayerId): Armor | null {
+    const armor = this.armor.get(playerId);
+    return armor ? deepCopyArmor(armor) : null;
+  }
+
+  saveArmor(armor: Armor): void {
+    this.armor.set(armor.playerId, deepCopyArmor(armor));
+  }
+
+  getSession(id: string): Session | null {
+    const session = this.sessions.get(id);
+    return session ? deepCopySession(session) : null;
+  }
+
+  saveSession(session: Session): void {
+    this.sessions.set(session.id, deepCopySession(session));
+  }
+
+  getSessionByTokenHash(tokenHash: string): Session | null {
+    for (const session of this.sessions.values()) {
+      if (session.tokenHash === tokenHash) {
+        return deepCopySession(session);
+      }
+    }
+    return null;
+  }
+
+  revokeSession(id: string, at: Date): void {
+    const session = this.sessions.get(id);
+    if (session) {
+      session.revokedAt = at;
+      this.sessions.set(id, session);
+    }
+  }
 }
 
 function deepCopyPlayer(player: Player): Player {
@@ -158,6 +254,25 @@ function deepCopyLedgerEntry(entry: LedgerEntry): LedgerEntry {
     counterpartyId: entry.counterpartyId,
     jobRunId: entry.jobRunId,
     occurredAt: new Date(entry.occurredAt)
+  };
+}
+
+function deepCopyArmor(armor: Armor): Armor {
+  return {
+    playerId: armor.playerId,
+    isActive: armor.isActive,
+    chargesRemaining: armor.chargesRemaining
+  };
+}
+
+function deepCopySession(session: Session): Session {
+  return {
+    id: session.id,
+    playerId: session.playerId,
+    tokenHash: session.tokenHash,
+    issuedAt: new Date(session.issuedAt),
+    expiresAt: new Date(session.expiresAt),
+    revokedAt: session.revokedAt ? new Date(session.revokedAt) : null
   };
 }
 
@@ -207,6 +322,51 @@ export class InMemoryLedgerRepository implements ILedgerRepository {
 
   async listForPlayer(playerId: PlayerId, limit: number): Promise<LedgerEntry[]> {
     return this.db.listLedgerEntries(playerId, limit);
+  }
+}
+
+export class InMemoryInventoryRepository implements IInventoryRepository {
+  constructor(private readonly db: InMemoryDatabase) {}
+
+  async get(playerId: PlayerId): Promise<Inventory> {
+    const counts = this.db.getInventory(playerId);
+    return { playerId, counts };
+  }
+
+  async adjust(playerId: PlayerId, tool: ToolType, delta: number, _tx: Transaction): Promise<void> {
+    this.db.adjustInventory(playerId, tool, delta);
+  }
+}
+
+export class InMemoryArmorRepository implements IArmorRepository {
+  constructor(private readonly db: InMemoryDatabase) {}
+
+  async get(playerId: PlayerId): Promise<Armor | null> {
+    return this.db.getArmor(playerId);
+  }
+
+  async save(armor: Armor, _tx: Transaction): Promise<void> {
+    this.db.saveArmor(armor);
+  }
+}
+
+export class InMemorySessionRepository implements ISessionRepository {
+  constructor(private readonly db: InMemoryDatabase) {}
+
+  async get(id: string): Promise<Session | null> {
+    return this.db.getSession(id);
+  }
+
+  async save(session: Session, _tx: Transaction): Promise<void> {
+    this.db.saveSession(session);
+  }
+
+  async getByTokenHash(tokenHash: string): Promise<Session | null> {
+    return this.db.getSessionByTokenHash(tokenHash);
+  }
+
+  async revoke(id: string, at: Date, _tx: Transaction): Promise<void> {
+    this.db.revokeSession(id, at);
   }
 }
 

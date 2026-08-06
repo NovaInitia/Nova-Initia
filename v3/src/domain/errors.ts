@@ -32,3 +32,38 @@ export class ConcurrentUnitOfWork extends Error {
     this.name = 'ConcurrentUnitOfWork';
   }
 }
+
+export class NegativeInventory extends Error {
+  constructor(tool: number) {
+    super(`Inventory count cannot go negative for tool ${tool}`);
+    this.name = 'NegativeInventory';
+  }
+}
+
+export class InvalidRegistration extends Error {
+  constructor(field: string) {
+    super(`Invalid registration: ${field}`);
+    this.name = 'InvalidRegistration';
+  }
+}
+
+export class NameTaken extends Error {
+  constructor() {
+    super('Name is already taken');
+    this.name = 'NameTaken';
+  }
+}
+
+export class AuthenticationFailed extends Error {
+  constructor() {
+    super('Authentication failed');
+    this.name = 'AuthenticationFailed';
+  }
+}
+
+export class SessionNotOwned extends Error {
+  constructor() {
+    super('Session not owned by this player');
+    this.name = 'SessionNotOwned';
+  }
+}
