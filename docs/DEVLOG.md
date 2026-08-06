@@ -136,3 +136,38 @@ One entry per cycle, newest last. This file is the loop's judgment; `ROADMAP.md`
 - **Continue?** Yes. One slice from M0 complete. Note for whoever runs cycle 3: the scenario
   harness is the first artefact a human is meant to *read the output of*, so it should print
   observable state legibly rather than assert.
+
+---
+
+## Cycle 3 — 2026-08-06 — scenario harness. **M0 complete.**
+
+- **Shipped:** `npm run scenario` — a single narrated script that registers a giver, prints the
+  D22 starting state and inventory, authenticates, resolves a session, demonstrates a generic
+  auth failure, uses an own-class tool (karma −1), its opposite (karma +1), an out-of-class tool
+  (karma unmoved), takes an ordinary sg debit and then a clamped one, and closes by checking
+  four invariants and setting a non-zero exit code if any fails. 147 tests, 0 fail.
+- **This is the walking skeleton A3 promised.** There is no client, so this is the artefact that
+  makes the server's behaviour visible to a person.
+- **Review found two legibility defects, which in this artefact are functional defects.** Both
+  ledger tables printed newest-first with nothing saying so, so the output implied the player
+  was damaged before they registered — `listForPlayer` returns newest-first by design and the
+  script has to account for that rather than pass it through. And my own spec's damage figures
+  (50 then 500, against a starting balance of 20) made *both* debits clamp, so the run never
+  demonstrated an ordinary debit; changed to 8 then 500.
+- **Verified the harness can actually fail**, which is the only thing that makes a PASS/FAIL
+  printer a smoke test. Under the same mutation used in cycle 1 (record the requested sg delta
+  instead of the clamped one), it reports `SG ledger sum (-488) equals balance (0): FAIL` and
+  exits 1; restored, it exits 0.
+- **Milestone review — is this still worth building?** Yes, and the reason is specific rather
+  than sentimental. The three approved BRDs and the recovered v1 rules describe a game that
+  demonstrably worked and had players; the risk here was never "is the design real" but "can the
+  design be recovered faithfully". Three cycles in, the recovered rules survive contact with
+  code: the karma axis, the clamped ledger, the class-match rule and D22's starting state all
+  implement cleanly and their invariants hold under mutation. The next milestone is where that
+  stops being provable in memory and has to hold in a database.
+- **Blocked.** M1 cannot start without a PostgreSQL role — the server runs but `stephen` has no
+  role, so nothing can connect. This is the charter's stated pause condition, now reached one
+  milestone earlier than written because persistence moved from M3 to M1. Loop pauses here;
+  `REQUESTS.md` carries the exact command.
+- **Continue?** Paused, not stopped. Every M1 slice is specified and unblocked the moment the
+  role exists.
