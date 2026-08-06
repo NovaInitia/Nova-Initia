@@ -1,5 +1,6 @@
-# npm-installed modern dependencies for the legacy v2 code (the 2011 vendored
-# set in node_modules/ is tracked deliberately — see CODEBASE.md)
+# Dependencies. The 2011 vendored set that used to live in node_modules/ is
+# archived in git history at commit 047c23d; see CODEBASE.md and CHARTER A6.
+node_modules/
 new_modules/
 package-lock.json
 package.json.bak
