@@ -1,0 +1,19 @@
+{
+  "name": "nova-initia-server",
+  "version": "3.0.0-alpha",
+  "description": "Nova Initia game server — core game loop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc && node --test dist/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "6f1ed002ab5595859014ebf0951522d9",
+    "domain": "9d5ed678fe57bcca610140957afab571",
+    "users": [
+      { "_id": "festercluck", "date": "2026-08-06T06:30:00.000Z" },
+      { "_id": "wanderer", "date": "2026-08-05T18:40:00.000Z" }
+    ],
+    "traps": [1754400000000, 1746057600000],
+    "barrels": [1753104000000],
+    "spiders": [],
+    "doorways": [1754006400000],
+    "signposts": [1753617600000],
+    "parts": []
+  },
+  {
+    "_id": "b1946ac92492d2347c6235b4d2611184",
+    "domain": "9d5ed678fe57bcca610140957afab571",
+    "users": [],
+    "traps": [1764547200000],
+    "barrels": [],
+    "spiders": [1754265600000],
+    "doorways": [],
+    "signposts": [],
+    "parts": []
+  },
+  {
+    "_id": "c157a79031e1c40f85931829bc5fc552",
+    "domain": "3d8e577bddb17db339eae0b3d9bcf180",
+    "users": [],
+    "traps": [],
+    "barrels": [1748736000000],
+    "spiders": [1749340800000],
+    "doorways": [1754092800000],
+    "signposts": [1753704000000, 1753790400000],
+    "parts": []
+  }
+]

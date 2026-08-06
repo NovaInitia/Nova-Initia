@@ -1,0 +1,22 @@
+[
+  {
+    "_id": 1754438400000,
+    "to": "festercluck",
+    "from": "wanderer",
+    "sub": "Your trap",
+    "body": "Walked straight into it. Well played.",
+    "domain": "9d5ed678fe57bcca610140957afab571",
+    "date": "2026-08-06T00:00:00.000Z",
+    "read": false
+  },
+  {
+    "_id": 1754352000000,
+    "to": "wanderer",
+    "from": "theungodlyone",
+    "sub": "Tour feedback",
+    "body": "The second stop is a dead link.",
+    "domain": "3d8e577bddb17db339eae0b3d9bcf180",
+    "date": "2026-08-05T00:00:00.000Z",
+    "read": true
+  }
+]

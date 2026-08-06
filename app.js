@@ -11,12 +11,17 @@ var relyingParty = new openid.RelyingParty(
     []); // List of extensions to enable and include
 
 App.mongoose.models.base = {};
-var $ = App.$;
-var mongooseTypes = require("mongoose-types");
+
+//App.$ is not referenced in this file; binding it here would force jQuery/jsdom to load.
+//Reach for App.$ directly if a route ever needs it.
+
+//The json backend supplies its own SchemaTypes, and mongoose-types cannot load without
+//the mongodb driver.
+var mongooseTypes = (App.data.backend === 'json') ? null : require("mongoose-types");
 
 App.mongoose.connect("mongodb://"+App.db.host+"/"+App.db.name);
 
-mongooseTypes.loadTypes(App.mongoose);
+if(mongooseTypes) mongooseTypes.loadTypes(App.mongoose);
 
 App.mongoose = require('./models/BarrelModel.js')(App.mongoose);
 App.mongoose = require('./models/ClassModel.js')(App.mongoose);

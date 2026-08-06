@@ -1,0 +1,32 @@
+[
+  {
+    "_id": 1754006400000,
+    "user": "wanderer",
+    "date": "2026-08-01T00:00:00.000Z",
+    "level": 20,
+    "class": 3,
+    "cmt": "Somewhere better.",
+    "url": "http://nova-initia.com/",
+    "title": "Through here",
+    "nsfw": false,
+    "score": 41,
+    "votes": 12,
+    "count": 37,
+    "chain": 1754092800000
+  },
+  {
+    "_id": 1754092800000,
+    "user": "wanderer",
+    "date": "2026-08-02T00:00:00.000Z",
+    "level": 20,
+    "class": 3,
+    "cmt": "And onward.",
+    "url": "http://example.com/",
+    "title": "Next link in the chain",
+    "nsfw": false,
+    "score": 8,
+    "votes": 3,
+    "count": 5,
+    "chain": 0
+  }
+]

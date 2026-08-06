@@ -12,5 +12,9 @@
   },
   "engines": {
     "node": "*"
+  },
+  "scripts": {
+    "test": "node test/run-tests.js",
+    "start:json": "NI_DATA=json node app.js"
   }
 }

@@ -1,0 +1,42 @@
+[
+  {
+    "_id": 1753104000000,
+    "user": "festercluck",
+    "class": 1,
+    "date": "2026-07-21T12:00:00.000Z",
+    "level": 12,
+    "sg": 50,
+    "traps": 2,
+    "barrels": 0,
+    "spiders": 0,
+    "shields": 1,
+    "doorways": 0,
+    "signposts": 0,
+    "title": "Spare kit",
+    "msg": "Take what you need, leave what you can.",
+    "cmt": "A giver left this here.",
+    "durability": 3,
+    "visitors": []
+  },
+  {
+    "_id": 1748736000000,
+    "user": "wanderer",
+    "class": 3,
+    "date": "2026-06-01T00:00:00.000Z",
+    "level": 19,
+    "sg": 0,
+    "traps": 0,
+    "barrels": 0,
+    "spiders": 0,
+    "shields": 0,
+    "doorways": 0,
+    "signposts": 0,
+    "title": "Empty",
+    "msg": "Someone got here first.",
+    "cmt": "",
+    "durability": 1,
+    "visitors": [
+      { "_id": "theungodlyone", "date": "2026-07-02T10:15:00.000Z" }
+    ]
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "_id": 1754400000000,
+    "user": "festercluck",
+    "class": 1,
+    "date": "2026-08-05T12:00:00.000Z",
+    "level": 12
+  },
+  {
+    "_id": 1746057600000,
+    "user": "festercluck",
+    "class": 1,
+    "date": "2026-05-01T00:00:00.000Z",
+    "level": 11
+  },
+  {
+    "_id": 1764547200000,
+    "user": "theungodlyone",
+    "class": 2,
+    "date": "2025-12-01T00:00:00.000Z",
+    "level": 14
+  }
+]

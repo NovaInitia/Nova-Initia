@@ -1,0 +1,10 @@
+# npm-installed modern dependencies for the legacy v2 code (the 2011 vendored
+# set in node_modules/ is tracked deliberately — see CODEBASE.md)
+new_modules/
+package-lock.json
+package.json.bak
+
+# v3 build artefacts
+v3/node_modules/
+v3/dist/
+*.tsbuildinfo

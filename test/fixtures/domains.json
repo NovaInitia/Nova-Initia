@@ -1,0 +1,20 @@
+[
+  {
+    "_id": "9d5ed678fe57bcca610140957afab571",
+    "uri": "example.com",
+    "pages": ["6f1ed002ab5595859014ebf0951522d9", "b1946ac92492d2347c6235b4d2611184"],
+    "users": [
+      { "_id": "wanderer", "date": "2026-08-05T18:40:00.000Z" }
+    ],
+    "hits": 4821,
+    "domains": []
+  },
+  {
+    "_id": "3d8e577bddb17db339eae0b3d9bcf180",
+    "uri": "nova-initia.com",
+    "pages": ["c157a79031e1c40f85931829bc5fc552"],
+    "users": [],
+    "hits": 19044,
+    "domains": []
+  }
+]

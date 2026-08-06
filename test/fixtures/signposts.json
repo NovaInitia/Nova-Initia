@@ -1,0 +1,46 @@
+[
+  {
+    "_id": 1753617600000,
+    "user": "wanderer",
+    "class": 3,
+    "date": "2026-07-27T12:00:00.000Z",
+    "level": 20,
+    "cmt": "Start here. Four ways on from this one.",
+    "url": "http://example.com/tour/start",
+    "title": "The Long Way Round",
+    "nsfw": false
+  },
+  {
+    "_id": 1753704000000,
+    "user": "wanderer",
+    "class": 3,
+    "date": "2026-07-28T12:00:00.000Z",
+    "level": 20,
+    "cmt": "Second stop.",
+    "url": "http://nova-initia.com/tour/two",
+    "title": "The Long Way Round, part 2",
+    "nsfw": false
+  },
+  {
+    "_id": 1753790400000,
+    "user": "festercluck",
+    "class": 1,
+    "date": "2026-07-29T12:00:00.000Z",
+    "level": 12,
+    "cmt": "A giver's signpost. Two branches only.",
+    "url": "http://nova-initia.com/shop",
+    "title": "To the shop",
+    "nsfw": false
+  },
+  {
+    "_id": 1753876800000,
+    "user": "theungodlyone",
+    "class": 2,
+    "date": "2026-07-30T12:00:00.000Z",
+    "level": 16,
+    "cmt": "Flagged, do not follow.",
+    "url": "http://example.com/nsfw",
+    "title": "Marked NSFW",
+    "nsfw": true
+  }
+]

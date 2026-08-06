@@ -2,11 +2,15 @@
 
 var I = Infinity;
 
+//Modules resolved on first access rather than at require time, so that selecting the
+//'json' backend does not drag in packages that only the 'mongodb' backend needs.
+var lazy = {};
+
 module.exports = {
 
     //IDE Settings
     debug : true,
-    
+
     //Web Connection
     web : {
 	    host : "50.57.99.62",
@@ -21,24 +25,51 @@ module.exports = {
         host : '127.0.0.1',
         port : 27017
     },
-    
+
+    //Data backend. 'mongodb' is the real thing; 'json' reads test/fixtures/*.json through
+    //lib/jsonstore.js and needs neither the mongodb driver nor a running database.
+    //Override with the NI_DATA environment variable.
+    data : {
+        backend : process.env.NI_DATA || 'mongodb'
+    },
+
     //Requires
     util : require('util'),
-    
-    $ : function() {
-	var jquery = require('jquery');
-	jquery.whenArray = function(arr) {
-		return jquery.when.apply( this, arr );
-	};
-	return jquery;
-    }(),
-    
+
+    //jQuery pulls in jsdom, which does not parse on modern Node. Only the unwired
+    //controllers/ layer uses it, so it is resolved on demand instead of at load.
+    get $() {
+	if(!lazy.$) {
+		var jquery = require('jquery');
+		jquery.whenArray = function(arr) {
+			return jquery.when.apply( this, arr );
+		};
+		lazy.$ = jquery;
+	}
+	return lazy.$;
+    },
+
     express : require('express'),
-    
-    mongoose : require('mongoose'),
-    
-    mongooseAdmin : require('mongoose-admin'),
-    
+
+    get mongoose() {
+        if(!lazy.mongoose) {
+            lazy.mongoose = (module.exports.data.backend === 'json')
+                ? require('./lib/jsonstore.js')()
+                : require('mongoose');
+        }
+        return lazy.mongoose;
+    },
+
+    //models/*.js return the store they were handed, and app.js assigns the result back.
+    set mongoose(replacement) {
+        lazy.mongoose = replacement;
+    },
+
+    get mongooseAdmin() {
+        if(!lazy.mongooseAdmin) lazy.mongooseAdmin = require('mongoose-admin');
+        return lazy.mongooseAdmin;
+    },
+
     //App Settings
     
     public : {

@@ -1,0 +1,12 @@
+[
+  {
+    "_id": 1,
+    "user": "festercluck",
+    "date": "2026-07-21T12:00:00.000Z",
+    "level": 12,
+    "cmt": "Reference tool record.",
+    "url": "http://example.com/",
+    "title": "Trap",
+    "nsfw": false
+  }
+]
