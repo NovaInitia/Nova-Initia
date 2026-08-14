@@ -67,3 +67,24 @@ export class SessionNotOwned extends Error {
     this.name = 'SessionNotOwned';
   }
 }
+
+export class MigrationChecksumMismatch extends Error {
+  constructor(version: string) {
+    super(`Migration ${version} checksum mismatch: file was tampered`);
+    this.name = 'MigrationChecksumMismatch';
+  }
+}
+
+export class MissingAppliedMigration extends Error {
+  constructor(version: string) {
+    super(`Applied migration ${version} has no corresponding file on disk`);
+    this.name = 'MissingAppliedMigration';
+  }
+}
+
+export class UnsafeTestDatabase extends Error {
+  constructor(dbName: string) {
+    super(`Cowardly refusing to run destructive tests against ${dbName} (not a _test database)`);
+    this.name = 'UnsafeTestDatabase';
+  }
+}

@@ -131,22 +131,37 @@ global scalars fall back to a keyed table.
 ALTER TABLE tool_type
     ADD COLUMN base_cost  integer  NOT NULL DEFAULT 1 CHECK (base_cost >= 0),
     ADD COLUMN initial_xp smallint NOT NULL DEFAULT 0 CHECK (initial_xp >= 0);
--- trap 5, barrel 5, spider 5, shield 0, doorway 10, signpost 10
+-- base_cost:  1 for every tool.
+-- initial_xp: trap 5, barrel 5, spider 5, shield 0, doorway 10, signpost 10
+--
+-- CORRECTION 2026-08-06 (cycle 4): this comment previously read
+-- "trap 5, barrel 5, spider 5, shield 0, doorway 10, signpost 10" directly beneath both
+-- columns, which reads as base_cost. Those are initial_xp values; base_cost is 1 throughout,
+-- as the DEFAULT already said. Authority is balance/seed.ts, which is test-covered.
 
 -- Which class and level unlocks each gated ability.
 CREATE TABLE ability_gate (
     ability_code   text     PRIMARY KEY,
-    class_id       smallint NOT NULL REFERENCES player_class(id),
+    class_id       smallint REFERENCES player_class(id),
     required_level smallint NOT NULL CHECK (required_level BETWEEN 0 AND 25)
 );
 -- anonymous_trap giver 10 · barrel_outside_message giver 5 · barrel_stash_sg giver 1
 -- loot_own_barrel giver 15 · wandering_spider guardian 15 · anti_signpost_spider guardian 10
--- chain_own_doorway guide 0
+-- chain_own_doorway guide 0 · barrel_inside_message (any class) 1
+--
+-- CORRECTION 2026-08-06 (cycle 4): class_id was NOT NULL and the list omitted
+-- barrel_inside_message, whose gate is class-independent (`playerClass: null` in seed.ts,
+-- "null means any class satisfies it"). NOT NULL would have rejected that row outright.
+-- NULL class_id therefore means "any class satisfies this gate".
 
 -- Age-banded curves: trap damage, spider XP, barrel XP.
 CREATE TABLE tool_age_bracket (
     tool_type_id smallint NOT NULL REFERENCES tool_type(id),
-    metric       text     NOT NULL CHECK (metric IN ('damage_sg','placer_xp')),
+    metric       text     NOT NULL
+                 CHECK (metric IN ('damage_sg','placer_xp','expert_bonus_dmg')),
+    -- CORRECTION 2026-08-06 (cycle 4): 'expert_bonus_dmg' was missing. seed.ts carries two
+    -- rows using it (trap expert bonus damage at 0d and 90d), so the original CHECK would
+    -- have failed the seed migration.
     min_age_ms   bigint   NOT NULL CHECK (min_age_ms >= 0),
     value        integer  NOT NULL,
     PRIMARY KEY (tool_type_id, metric, min_age_ms)

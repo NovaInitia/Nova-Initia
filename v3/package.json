@@ -7,14 +7,20 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "tsc && node --test \"dist/**/*.test.js\"",
-    "scenario": "tsc && node dist/scenario/walkthrough.js"
+    "test": "tsc && node --test --test-concurrency=1 \"dist/**/*.test.js\"",
+    "scenario": "tsc && node dist/scenario/walkthrough.js",
+    "migrate": "tsc && node dist/db/migrate.js",
+    "test:db": "tsc && NOVA_REQUIRE_DB=1 node --test --test-concurrency=1 \"dist/db/*.test.js\""
   },
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "pg": "^8.23.0"
+  },
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "@types/pg": "^8.11.10",
     "typescript": "^5.6.0"
   }
 }

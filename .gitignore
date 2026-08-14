@@ -2,7 +2,10 @@
 # archived in git history at commit 047c23d; see CODEBASE.md and CHARTER A6.
 node_modules/
 new_modules/
-package-lock.json
+# Root-anchored: the legacy v2 lockfile stays untracked, but v3/package-lock.json is
+# tracked deliberately — as of cycle 4 v3 has a real runtime dependency (pg) and the
+# lockfile is what makes its transitive set reproducible.
+/package-lock.json
 package.json.bak
 
 # v3 build artefacts
