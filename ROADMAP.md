@@ -8,35 +8,35 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **Audit triggers and the placement-cap guards** (M1) — `SCHEMA-01` §7.2 `audit_log` +
-   `audit_row()` + `SET LOCAL app.actor_id`, and §8's `enforce_page_placement_cap()` and the
-   inventory-cap equivalent. Both were deliberately held back from cycle 4: the audit trigger
-   because it has no actor to record until a repository sets one, and the cap triggers because
-   they belong with `PlacementModule`. Lands as migration `0003`.
-   **Note for whoever takes this:** `audit_log` will be the first table to prove cycle 4's
-   default-truncate rule in `freshDb()` — it should be cleaned automatically, with no edit to
-   the helper. If it is not, the rule is broken and that is a finding.
-2. **PostgreSQL repositories + real `IUnitOfWork`** (M1) — the same interfaces M0 exercised,
+1. **PostgreSQL repositories + real `IUnitOfWork`** (M1) — the same interfaces M0 exercised,
    now transactional. Every atomicity guarantee in TRD §8.2 verified here against the server.
    The real unit of work **must support concurrent transactions**, which the in-memory double
    deliberately refuses (see cycle 1) — that is the whole point of moving to it.
-3. **GeographyModule** (M2, parcel 5) — page/domain resolution, normalisation-version gating,
+   **It is also where `app.actor_id` gets set for real**, which is what makes the cycle-5 audit
+   triggers record a `changed_by` instead of NULL. Use
+   `SELECT set_config('app.actor_id', $1, true)` — parameterized and transaction-local. Cycle 5
+   had to fix a string-interpolated `SET LOCAL` in a test precisely because this is the line
+   that would have copied it.
+2. **GeographyModule** (M2, parcel 5) — page/domain resolution, normalisation-version gating,
    presence enter/leave/expire. **Note:** the URL normaliser itself is *not* server work —
    BRD-01 F.4 puts execution on the client and leaves the server owning only the specification
    and the version gate. Cycle 4 nearly built one before re-reading F.4; do not repeat that.
-4. **PlacementModule** (M2, parcel 6) — placement with inventory, level gates, D16 page cap via
-   advisory lock, initial XP and karma; barrel stashing; dismissal.
-5. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+3. **PlacementModule** (M2, parcel 6) — placement with inventory, level gates, initial XP and
+   karma; barrel stashing; dismissal. The D16 cap is **already enforced** by the cycle-5
+   trigger; what this slice adds is the advisory lock on `(page, placer, tool)` that closes the
+   READ COMMITTED race (CHARTER A4), plus a clean typed error for the `23514` the trigger
+   raises.
+4. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-6. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-7. **EconomyModule: purchase and level-up** (M3, parcel 8).
-8. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+5. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+6. **EconomyModule: purchase and level-up** (M3, parcel 8).
+7. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-9. **WorldModule: wandering spiders** (M3, parcel 9).
+8. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -66,3 +66,11 @@ to second (CHARTER A1, Milestones).*
   Reference-data seeding was pulled forward into this slice — it was listed under the old
   item 2, but a schema with no reference data cannot satisfy a single foreign key, so the two
   were one increment in practice.
+- [cycle 5] **Audit triggers and cap guards** (M1) — migration `0003`: `audit_log`,
+  `audit_row()` attached to 18 tables, and the D16 / A.4 cap-enforcement triggers. 185 tests
+  (38 against the database), 31 tables, 21 triggers. Corrected three defects in SCHEMA-01 §7.2:
+  the documented `NEW.id` body cannot work on the composite-key tables that are most of the
+  audit set, `SECURITY DEFINER` lacked a pinned `search_path`, and the triggers needed to be
+  `AFTER`. Both cap triggers read their limit from `balance_constant` (D23) rather than
+  hard-coding 250. **Cycle 4's default-truncate rule was validated here** — `audit_log` is
+  cleaned between tests with no edit to `testDb.ts`, which is exactly what it was designed for.

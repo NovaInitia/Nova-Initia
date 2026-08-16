@@ -12,9 +12,18 @@ describe('migration runner', { skip: DB_SKIP }, () => {
     const pool = await freshDb();
 
     try {
+      // Count expected migrations from the migrations directory
+      const fs = await import('fs/promises');
+      const migDir = new URL('../../migrations/', import.meta.url);
+      const { fileURLToPath } = await import('url');
+      const realMigDir = fileURLToPath(migDir);
+      const files = await fs.readdir(realMigDir);
+      const migrationRegex = /^\d{4}_[a-z0-9_]+\.sql$/;
+      const expectedCount = files.filter(f => migrationRegex.test(f)).length;
+
       const result = await pool.query('SELECT COUNT(*) FROM schema_migration');
       const count = parseInt(result.rows[0].count, 10);
-      assert.equal(count, 2, 'Expected 2 migrations applied');
+      assert.equal(count, expectedCount, `Expected ${expectedCount} migrations applied`);
     } finally {
       await closeDb(pool);
     }

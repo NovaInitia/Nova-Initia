@@ -284,3 +284,91 @@ One entry per cycle, newest last. This file is the loop's judgment; `ROADMAP.md`
   answered affirmatively: every constraint in the schema is now asserted by a test that watches
   it reject bad data, and the reference data is pinned to `balance/seed.ts` by a drift test that
   was mutation-checked and did catch injected drift.
+
+---
+
+## Cycle 5 — 2026-08-14 — audit triggers and cap guards
+
+- **Companion skills are AVAILABLE again**, reversing cycle 4's finding. All six are in this
+  session's list, so **this cycle's review ran on the real `ai-grouch` skill**, not the embedded
+  fallback. The availability of these skills has now changed twice mid-project; treat cycle 0's
+  one-time check as stale by default and re-read the list each cycle rather than inheriting it.
+
+- **Recovery, twice.** The implementer session stalled mid-verification (watchdog, no progress
+  for 600s), so verification was finished by the lead. Separately the private PostgreSQL cluster
+  was gone on resume — it does not survive a reboot, exactly as `REQUESTS.md` warns — and was
+  restarted from the documented command. Cheap because it was written down; the note earning its
+  keep one cycle after being written is the argument for writing such things down.
+
+- **Shipped:** migration `0003` — `audit_log`, `audit_row()` attached to 18 tables, and the two
+  cap-enforcement triggers. **185 tests (38 against the database), 0 fail, 0 skipped**, five
+  consecutive identical runs, typecheck clean from a wiped `dist/`, 31 tables and 21 triggers
+  applied cleanly to a brand-new database and idempotent on re-run.
+
+- **Three defects in SCHEMA-01 §7.2, caught by reading the document against the schema.**
+  The documented body uses `COALESCE(NEW.id::text, OLD.id::text)`, and **most audited tables
+  have no `id` column** — `player_inventory` is keyed `(player_id, tool_type_id)`, `player_armor`
+  by `player_id`, `level_definition` by `level`, `balance_constant` by `code`. The documented
+  trigger raises `record "new" has no field "id"` on the first write to any of them. Replaced
+  with primary-key column names passed as trigger arguments. Also: `SECURITY DEFINER` without a
+  pinned `search_path` is the classic privilege-escalation shape, so `SET search_path =
+  pg_catalog, public` was added; and the triggers are `AFTER … RETURN NULL`. This is the third
+  consecutive cycle in which a design document was wrong in a way that only reading it against
+  the code revealed.
+
+- **The blocking review finding was a test that could not fail.** `audit.test.ts` verified that
+  balance changes record old and new values by updating `karma_max` to `100` — and `karma_max`
+  is **seeded at 100**, so it asserted `old == 100` and `new == 100` on a no-op write, unable to
+  distinguish the two columns. Proven by mutation: swapping `to_jsonb(OLD)` and `to_jsonb(NEW)`
+  in the trigger — a total inversion of the audit trail — left **6 of 7 audit tests passing**.
+  After the fix (update to `99`, assert `old == 100` and `new == 99`) the same mutation fails 2
+  of 7. **Mutation testing found this; reading did not, and could not.** Cycle 1 made mutation
+  testing standard practice for a design's central claim; this is the second time it has paid.
+
+- **Two of the lead's suspicions were wrong, and checking cost less than filing them.** The
+  actor-leak test looked vacuous because it writes on a second pooled connection — but
+  `pg_backend_pid()` is identical across the release/reacquire, so it genuinely exercises the
+  same session, and `current_setting` returns `''` post-commit, which the trigger's
+  `nullif(…, '')` correctly maps to NULL. And `audit_log` was expected to need a `testDb.ts`
+  edit; it did not. **Cycle 4's default-truncate rule cleaned a table it had never heard of**,
+  which is exactly the property it was built for and the first evidence that it works.
+
+- **String-built SQL, caught before it could propagate.** The tests set the actor with
+  `` `SET LOCAL app.actor_id = '${actorId}'` ``. Harmless in a test with a `randomUUID`, and a
+  direct violation of `CLAUDE.md`'s "no string-built queries, ever" — but the reason it mattered
+  is that **roadmap item 1 is the real unit of work, whose whole job is setting this value from
+  a live session**, and this is the line that would have been copied. Replaced with
+  `SELECT set_config('app.actor_id', $1, true)`, and the roadmap now carries that form.
+
+- **Removed a silent fallback.** Both cap functions defaulted to a hardcoded `250` when the
+  balance constant was missing, which reintroduced the magic number that reading from
+  `balance_constant` existed to eliminate: delete the constant and the cap silently continues
+  rather than failing. Now `RAISE EXCEPTION`. A missing balance constant should be loud.
+
+- **Lead error, again the same shape as cycle 4's.** The spec forbade modifying existing tests
+  while adding a third migration — and cycle 4's `migrate.test.ts` asserts a literal `2`
+  migrations. The implementer correctly left it alone and the suite went red. Two lessons: a
+  test that hardcodes a count of things that grow is a defect the moment it is written, and
+  **a "do not touch" list must be checked against what the change actually requires.**
+
+- **Migration immutability held, and was deliberately suspended once.** Editing the applied
+  `0003` tripped `MigrationChecksumMismatch` — the guard working as designed. Because `0003`
+  had never left this machine it was treated as unreleased and the local databases were rebuilt,
+  with an explicit instruction not to generalise that to any shipped migration. Recorded here so
+  the exception is not mistaken for the rule.
+
+- **Published.** `origin/master` is now at the cycle-4 work plus a redaction: the source line in
+  `PHP-ERA-FINDINGS.md` named a username and LAN address for the backup host, removed in
+  `b9f2d69`. The Project Owner decided **not** to rewrite history to purge it from `047c23d` —
+  the exposure is an RFC1918 address, and a rewrite would invalidate the commit hashes cited
+  across the state files while not guaranteeing removal. Rotating that password is the
+  mitigation that actually closes it, and remains open in `REQUESTS.md`.
+
+- **Nit carried, not fixed:** `migrate.test.ts` now uses `await import(...)` for `fs/promises`
+  and `url` inside the test body where the file has top-level imports. Functional, slightly off
+  the house style, not worth a round trip.
+
+- **Continue?** Yes. M1 is two-thirds done. The next slice is the real `IUnitOfWork` and the
+  PostgreSQL repositories, which is where the audit triggers stop recording NULL actors and
+  start recording real ones — and where TRD §8.2's atomicity guarantees finally get tested
+  against a server rather than assumed.

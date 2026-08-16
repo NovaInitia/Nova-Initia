@@ -73,5 +73,20 @@ Checked at the start of every cycle.
   **Until this lands, M1 (roadmap items 1–3) cannot start.** The loop is working ahead on the
   pure-logic slices that do not touch a database rather than idling — see cycle 4.
 
-- [ ] **2026-08-06, setup — non-blocking.** The SSH password for the backup host was shared in
-  conversation and is therefore in this session's history. Worth rotating when convenient.
+- [ ] **2026-08-06, setup — non-blocking. STILL OPEN, and now the one that matters.** The SSH
+  password for the backup host was shared in conversation and is therefore in this session's
+  history. Worth rotating when convenient.
+
+  > **Context added 2026-08-14 (cycle 5).** The repository is now public. The host's address and
+  > username were published in `docs/PHP-ERA-FINDINGS.md` and were removed in `b9f2d69`, but
+  > they remain in commit `047c23d` in the pushed history.
+  >
+  > **Decision by the Project Owner: leave the history alone.** Purging would rewrite six
+  > commits and force-push over a public branch, it would invalidate the commit hashes cited in
+  > `CHARTER.md`, `REQUESTS.md` and `docs/DEVLOG.md` — including the `git archive 047c23d
+  > node_modules` recovery instruction — and it would not guarantee removal anyway, since the
+  > old objects are already fetched, indexed, and reachable by SHA. The exposure is an RFC1918
+  > address that routes nowhere from outside the LAN, plus a username.
+  >
+  > Rotating this password is therefore the mitigation that actually closes the risk, and it
+  > closes it regardless of what the repository says. Do not re-propose a history rewrite.
