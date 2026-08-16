@@ -1,6 +1,6 @@
 # PHP-era findings — recovered game rules
 
-**Source:** `stephen@192.168.1.140:/mnt/sdb1/ni2/opt/vol/var/www/html`
+**Source:** the v1 server backup, at `ni2/opt/vol/var/www/html` within the archive.
 **Recovered:** 2026-08-06
 **Status:** Evidence. Feeds the amendment to [BRD-01](BRD-01-core-game-loop.md) §7.
 
