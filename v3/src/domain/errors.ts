@@ -40,6 +40,13 @@ export class NegativeInventory extends Error {
   }
 }
 
+export class InventoryCapExceeded extends Error {
+  constructor(tool: number) {
+    super(`Inventory cap exceeded for tool ${tool}`);
+    this.name = 'InventoryCapExceeded';
+  }
+}
+
 export class InvalidRegistration extends Error {
   constructor(field: string) {
     super(`Invalid registration: ${field}`);

@@ -1,15 +1,18 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { randomUUID } from 'node:crypto';
-import { PlayerClass, ResourceKind, type LedgerCause } from '../domain/enums.js';
-import type { PlayerId } from '../domain/ids.js';
-import type { Player, ClassProgress } from '../domain/player.js';
+import { PlayerClass, ResourceKind, ToolType, type LedgerCause } from '../domain/enums.js';
+import type { PlayerId, SessionId } from '../domain/ids.js';
+import type { Player, ClassProgress, Armor, Session } from '../domain/player.js';
 import type { LedgerEntry } from '../domain/progression.js';
 import { DB_SKIP, freshDb, closeDb } from '../db/testDb.js';
-import { NameTaken } from '../domain/errors.js';
+import { NameTaken, NegativeInventory, InventoryCapExceeded } from '../domain/errors.js';
 import { PgPlayerRepository } from './PgPlayerRepository.js';
 import { PgClassProgressRepository } from './PgClassProgressRepository.js';
 import { PgLedgerRepository } from './PgLedgerRepository.js';
+import { PgInventoryRepository } from './PgInventoryRepository.js';
+import { PgArmorRepository } from './PgArmorRepository.js';
+import { PgSessionRepository } from './PgSessionRepository.js';
 
 function makePlayer(id: PlayerId, name?: string): Player {
   return {
@@ -420,6 +423,350 @@ describe('PgLedgerRepository', { skip: DB_SKIP }, () => {
       for (const cause of causes) {
         assert.ok(causesRetrieved.has(cause as LedgerCause));
       }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
+describe('PgInventoryRepository', { skip: DB_SKIP }, () => {
+  it('get on unknown player returns empty map', async () => {
+    const pool = await freshDb();
+    try {
+      const inventoryRepo = new PgInventoryRepository(pool);
+
+      const result = await inventoryRepo.get(randomUUID() as PlayerId);
+      assert.equal(result.counts.size, 0);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('adjust adds items when not present', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      await inventoryRepo.adjust(playerId, ToolType.Trap, 10, tx);
+
+      const result = await inventoryRepo.get(playerId);
+      assert.equal(result.counts.get(ToolType.Trap), 10);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('adjust increments existing items', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      await inventoryRepo.adjust(playerId, ToolType.Trap, 10, tx);
+      await inventoryRepo.adjust(playerId, ToolType.Trap, 5, tx);
+
+      const result = await inventoryRepo.get(playerId);
+      assert.equal(result.counts.get(ToolType.Trap), 15);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('adjust negative delta throws NegativeInventory when result would be negative', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      await inventoryRepo.adjust(playerId, ToolType.Trap, 5, tx);
+
+      try {
+        await inventoryRepo.adjust(playerId, ToolType.Trap, -10, tx);
+        assert.fail('should have thrown NegativeInventory');
+      } catch (err) {
+        assert.ok(err instanceof NegativeInventory);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('adjust exceeding inventory cap throws InventoryCapExceeded', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      try {
+        await inventoryRepo.adjust(playerId, ToolType.Trap, 251, tx);
+        assert.fail('should have thrown InventoryCapExceeded');
+      } catch (err) {
+        assert.ok(err instanceof InventoryCapExceeded);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('handles multiple tools independently', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      await inventoryRepo.adjust(playerId, ToolType.Trap, 10, tx);
+      await inventoryRepo.adjust(playerId, ToolType.Spider, 5, tx);
+      await inventoryRepo.adjust(playerId, ToolType.Barrel, 3, tx);
+
+      const result = await inventoryRepo.get(playerId);
+      assert.equal(result.counts.get(ToolType.Trap), 10);
+      assert.equal(result.counts.get(ToolType.Spider), 5);
+      assert.equal(result.counts.get(ToolType.Barrel), 3);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
+describe('PgArmorRepository', { skip: DB_SKIP }, () => {
+  it('get on unknown player returns null', async () => {
+    const pool = await freshDb();
+    try {
+      const armorRepo = new PgArmorRepository(pool);
+
+      const result = await armorRepo.get(randomUUID() as PlayerId);
+      assert.equal(result, null);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('save and get round-trip', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const armorRepo = new PgArmorRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      const armor: Armor = {
+        playerId,
+        isActive: true,
+        chargesRemaining: 42
+      };
+
+      await armorRepo.save(armor, tx);
+      const retrieved = await armorRepo.get(playerId);
+
+      assert.ok(retrieved);
+      assert.equal(retrieved.playerId, armor.playerId);
+      assert.equal(retrieved.isActive, true);
+      assert.equal(retrieved.chargesRemaining, 42);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('save twice updates', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const armorRepo = new PgArmorRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      let armor: Armor = {
+        playerId,
+        isActive: false,
+        chargesRemaining: 0
+      };
+
+      await armorRepo.save(armor, tx);
+
+      armor.isActive = true;
+      armor.chargesRemaining = 50;
+      await armorRepo.save(armor, tx);
+
+      const retrieved = await armorRepo.get(playerId);
+      assert.ok(retrieved);
+      assert.equal(retrieved.isActive, true);
+      assert.equal(retrieved.chargesRemaining, 50);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
+describe('PgSessionRepository', { skip: DB_SKIP }, () => {
+  it('get on unknown session returns null', async () => {
+    const pool = await freshDb();
+    try {
+      const sessionRepo = new PgSessionRepository(pool);
+
+      const result = await sessionRepo.get(randomUUID() as SessionId);
+      assert.equal(result, null);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('getByTokenHash on unknown hash returns null', async () => {
+    const pool = await freshDb();
+    try {
+      const sessionRepo = new PgSessionRepository(pool);
+
+      const result = await sessionRepo.getByTokenHash('unknown-hash');
+      assert.equal(result, null);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('save and get round-trip', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const sessionRepo = new PgSessionRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      const now = new Date();
+      const session: Session = {
+        id: randomUUID() as SessionId,
+        playerId,
+        tokenHash: 'hash123',
+        issuedAt: now,
+        expiresAt: new Date(now.getTime() + 1000000),
+        revokedAt: null
+      };
+
+      await sessionRepo.save(session, tx);
+      const retrieved = await sessionRepo.get(session.id);
+
+      assert.ok(retrieved);
+      assert.equal(retrieved.id, session.id);
+      assert.equal(retrieved.playerId, session.playerId);
+      assert.equal(retrieved.tokenHash, session.tokenHash);
+      assert.equal(retrieved.revokedAt, null);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('getByTokenHash finds session by token hash', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const sessionRepo = new PgSessionRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      const now = new Date();
+      const session: Session = {
+        id: randomUUID() as SessionId,
+        playerId,
+        tokenHash: 'unique-hash-123',
+        issuedAt: now,
+        expiresAt: new Date(now.getTime() + 1000000),
+        revokedAt: null
+      };
+
+      await sessionRepo.save(session, tx);
+      const retrieved = await sessionRepo.getByTokenHash('unique-hash-123');
+
+      assert.ok(retrieved);
+      assert.equal(retrieved.id, session.id);
+      assert.equal(retrieved.tokenHash, 'unique-hash-123');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('revoke sets revokedAt', async () => {
+    const pool = await freshDb();
+    try {
+      const playerRepo = new PgPlayerRepository(pool);
+      const sessionRepo = new PgSessionRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const playerId = randomUUID() as PlayerId;
+      const player = makePlayer(playerId);
+      await playerRepo.save(player, tx);
+
+      const now = new Date();
+      const session: Session = {
+        id: randomUUID() as SessionId,
+        playerId,
+        tokenHash: 'hash456',
+        issuedAt: now,
+        expiresAt: new Date(now.getTime() + 1000000),
+        revokedAt: null
+      };
+
+      await sessionRepo.save(session, tx);
+
+      const revokeTime = new Date(now.getTime() + 5000);
+      await sessionRepo.revoke(session.id, revokeTime, tx);
+
+      const retrieved = await sessionRepo.get(session.id);
+      assert.ok(retrieved);
+      assert.ok(retrieved.revokedAt);
+      assert.equal(retrieved.revokedAt.getTime(), revokeTime.getTime());
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('revoke on unknown session id does nothing', async () => {
+    const pool = await freshDb();
+    try {
+      const sessionRepo = new PgSessionRepository(pool);
+      const tx = { id: 'tx1' };
+
+      const unknownId = randomUUID() as SessionId;
+      // Should not throw
+      await sessionRepo.revoke(unknownId, new Date(), tx);
+
+      const retrieved = await sessionRepo.get(unknownId);
+      assert.equal(retrieved, null);
     } finally {
       await closeDb(pool);
     }

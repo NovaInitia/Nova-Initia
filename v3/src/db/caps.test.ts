@@ -4,6 +4,10 @@ import { Pool } from 'pg';
 import { freshDb, closeDb, DB_SKIP } from './testDb.js';
 import { randomUUID } from 'crypto';
 
+function isPgError(e: unknown): e is { code?: string; constraint?: string } {
+  return typeof e === 'object' && e !== null && 'code' in e;
+}
+
 describe('cap enforcement triggers', { skip: DB_SKIP }, () => {
   let pool: Pool;
 
@@ -552,9 +556,11 @@ describe('cap enforcement triggers', { skip: DB_SKIP }, () => {
         );
         assert.fail('Should raise check_violation');
       } catch (error) {
-        assert.ok(error instanceof Error && 'code' in error);
-        const code = (error as any).code;
-        assert.equal(code, '23514', `Expected SQLSTATE 23514, got ${code}`);
+        if (isPgError(error)) {
+          assert.equal(error.code, '23514', `Expected SQLSTATE 23514, got ${error.code}`);
+        } else {
+          assert.fail('Expected a PostgreSQL error');
+        }
       }
 
       // Test inventory cap error
@@ -573,9 +579,11 @@ describe('cap enforcement triggers', { skip: DB_SKIP }, () => {
         );
         assert.fail('Should raise check_violation');
       } catch (error) {
-        assert.ok(error instanceof Error && 'code' in error);
-        const code = (error as any).code;
-        assert.equal(code, '23514', `Expected SQLSTATE 23514, got ${code}`);
+        if (isPgError(error)) {
+          assert.equal(error.code, '23514', `Expected SQLSTATE 23514, got ${error.code}`);
+        } else {
+          assert.fail('Expected a PostgreSQL error');
+        }
       }
     } finally {
       await closeDb(pool);

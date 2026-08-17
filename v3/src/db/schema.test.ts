@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import * as assert from 'node:assert/strict';
+import { Pool } from 'pg';
 import { closeDb, DB_SKIP, freshDb } from './testDb.js';
 
 function randomUuid(): string {
@@ -11,7 +12,7 @@ function randomUuid(): string {
   });
 }
 
-async function setupPlayer(pool: any): Promise<string> {
+async function setupPlayer(pool: Pool): Promise<string> {
   // First verify player_class exists
   const classCheck = await pool.query('SELECT COUNT(*) FROM player_class WHERE id = 1');
   if (parseInt(classCheck.rows[0].count, 10) === 0) {
@@ -26,7 +27,7 @@ async function setupPlayer(pool: any): Promise<string> {
   return playerId;
 }
 
-async function setupPage(pool: any): Promise<string> {
+async function setupPage(pool: Pool): Promise<string> {
   const pageId = randomUuid();
   const domainId = randomUuid();
 
@@ -48,7 +49,7 @@ async function setupPage(pool: any): Promise<string> {
   return pageId;
 }
 
-async function setupPlacement(pool: any, playerId: string, pageId: string): Promise<string> {
+async function setupPlacement(pool: Pool, playerId: string, pageId: string): Promise<string> {
   const placementId = randomUuid();
 
   await pool.query(
@@ -127,7 +128,7 @@ describe('schema constraints', { skip: DB_SKIP }, () => {
 
       // Try to insert with different case - should be rejected
       let caught = false;
-      let error: any;
+      let error: unknown;
       try {
         await pool.query(
           'INSERT INTO player (id, name, credential_hash, active_class_id) VALUES ($1, $2, $3, $4)',

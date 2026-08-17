@@ -444,3 +444,69 @@ One entry per cycle, newest last. This file is the loop's judgment; `ROADMAP.md`
   same class is worth noting, because the class was already in scope.
 
 - **Continue?** Yes. One slice from M1: Identity's three repositories and its integration.
+
+---
+
+## Cycle 7 — 2026-08-14 — IdentityModule against PostgreSQL. **M1 complete.**
+
+- **Shipped:** inventory, armor and session repositories, plus `IdentityModule` exercised end to
+  end against the real database — D22's starting state, authentication, session resolution and
+  revocation, public-profile isolation. **237 tests, 0 fail, 0 skipped**, typecheck clean from a
+  wiped `dist/`, scenario harness green. `any` is now absent from `src/` entirely, including the
+  two cycle-5 test files this cycle cleaned up.
+
+- **Two failures that share a SQLSTATE.** `player_inventory` can fail `23514` two ways: the
+  `quantity >= 0` CHECK when a decrement would go negative, and cycle 5's `enforce_inventory_cap`
+  trigger. They must become different domain errors, and **the only stable discriminator is
+  structural** — a CHECK violation carries a `constraint` property, a PL/pgSQL `RAISE EXCEPTION
+  ... USING ERRCODE` does not. Matching on message text would have worked today and broken on
+  any wording change. `NegativeInventory` and the new `InventoryCapExceeded` now split cleanly.
+
+- **The headline test, and the proof it is real.** Two concurrent registrations of the same name
+  through two simultaneous `PgUnitOfWork.run` calls: exactly one succeeds, exactly one rejects
+  with `NameTaken`, and exactly one row survives. Cycle 2 recorded this as unfixable because
+  `register` check-then-inserts, which no in-memory store can make safe.
+  **Mutation-checked:** dropping `player_name_key` makes the test fail. It is pinned to the
+  database constraint, not to lucky timing — which is the entire claim.
+
+- **An accident that validated cycle 4's work.** Dropping that constraint for the mutation left
+  duplicate rows behind (without it, *both* registrations succeed — the bug itself), so the
+  constraint could not be re-added until the table was cleared. Worth recording because **three**
+  tests failed, not one: `schema.test.ts` from cycle 4 caught the drift independently. The suite
+  detects a test database whose schema has diverged from its migrations, which is exactly what
+  those constraint tests were written for and the first time it has mattered.
+
+### Milestone review — M1 complete
+
+The loop calls for the deep question after a milestone rather than the per-cycle one.
+
+**What exists now.** A player can be registered, authenticated, session-resolved and progressed
+against PostgreSQL, inside real transactions, with every sg/XP/karma movement ledgered and every
+mutation of 18 tables audited with an actor. Concurrency is genuine, atomicity is verified rather
+than assumed, and the two caps are enforced by the database rather than by hopeful application
+code. TRD §8.2's guarantees are now tested against a server — the debt CHARTER A1 explicitly
+accepted, and then declined once a server appeared, is fully repaid.
+
+**Who benefits right now? Nobody.** That is the honest answer at seven cycles. There is no
+client, no HTTP surface, and the only human-visible artefact is `npm run scenario`. Everything
+built so far is foundation, and the project's value is entirely deferred.
+
+**Is that acceptable?** Yes, but the reason has to be specific rather than sentimental. M2 is
+where the thing becomes recognisably Nova Initia: pages, placements, encounters — a player
+walking onto a page and springing someone else's trap. That is the core use case in the charter,
+and it is the next three slices, not a distant phase. If M2 were still infrastructure I would
+argue for re-scoping toward the HTTP boundary to get something reachable sooner.
+
+**Would a human fund another cycle?** Yes. The foundation is unusually well-verified for its age,
+the next slice is product work, and the design documents have survived contact with a real
+database — with the important caveat that they have needed correcting in **four of seven
+cycles** (SCHEMA-01 three times, BRD-01's F.4 once). That rate is the project's defining risk and
+has not fallen. It is also the argument for the loop's structure: every one of those corrections
+came from reading the document against the code before writing a spec, not from the tests.
+
+**The one thing I would flag to a funder:** the definition of done requires HTTP (M4), and
+nothing before M4 produces something a person can use. The scenario harness is standing in for a
+client and it is a thin substitute. If the goal were a demo rather than a correct server, the
+ordering would be wrong.
+
+- **Continue?** Yes — M2, starting with `GeographyModule`.
