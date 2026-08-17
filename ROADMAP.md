@@ -8,15 +8,11 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **PostgreSQL repositories + real `IUnitOfWork`** (M1) — the same interfaces M0 exercised,
-   now transactional. Every atomicity guarantee in TRD §8.2 verified here against the server.
-   The real unit of work **must support concurrent transactions**, which the in-memory double
-   deliberately refuses (see cycle 1) — that is the whole point of moving to it.
-   **It is also where `app.actor_id` gets set for real**, which is what makes the cycle-5 audit
-   triggers record a `changed_by` instead of NULL. Use
-   `SELECT set_config('app.actor_id', $1, true)` — parameterized and transaction-local. Cycle 5
-   had to fix a string-interpolated `SET LOCAL` in a test precisely because this is the line
-   that would have copied it.
+1. **IdentityModule's PostgreSQL repositories** (M1, completes the milestone) — inventory,
+   armor and session, plus `IdentityModule` exercised end to end against the real store.
+   The unit of work, and the player / class-progress / ledger repositories, landed in cycle 6.
+   The headline test is the one cycle 2 could not write: **two concurrent registrations of the
+   same name, exactly one of which must fail with `NameTaken`.**
 2. **GeographyModule** (M2, parcel 5) — page/domain resolution, normalisation-version gating,
    presence enter/leave/expire. **Note:** the URL normaliser itself is *not* server work —
    BRD-01 F.4 puts execution on the client and leaves the server owning only the specification
@@ -74,3 +70,10 @@ to second (CHARTER A1, Milestones).*
   `AFTER`. Both cap triggers read their limit from `balance_constant` (D23) rather than
   hard-coding 250. **Cycle 4's default-truncate rule was validated here** — `audit_log` is
   cleaned between tests with no edit to `testDb.ts`, which is exactly what it was designed for.
+- [cycle 6] **`PgUnitOfWork` + ProgressionModule's repositories** (M1) — player, class progress
+  and ledger against PostgreSQL, with an `AsyncLocalStorage` ambient transaction so repository
+  reads join the transaction they run inside without a contract change. 211 tests. Concurrent
+  transactions work, which the in-memory double refuses by design. `NameTaken` is now enforced
+  by the `citext` unique constraint, closing cycle 2's check-then-insert gap. `npm test` no
+  longer passes when the database is unreachable — it previously reported a green 147 while
+  silently omitting 38 tests.

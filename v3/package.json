@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "tsc && node --test --test-concurrency=1 \"dist/**/*.test.js\"",
+    "test": "tsc && NOVA_REQUIRE_DB=1 node --test --test-concurrency=1 \"dist/**/*.test.js\"",
+    "test:unit": "tsc && node --test --test-concurrency=1 \"dist/modules/*.test.js\" \"dist/balance/*.test.js\" \"dist/repositories/InMemory*.test.js\"",
     "scenario": "tsc && node dist/scenario/walkthrough.js",
     "migrate": "tsc && node dist/db/migrate.js",
     "test:db": "tsc && NOVA_REQUIRE_DB=1 node --test --test-concurrency=1 \"dist/db/*.test.js\""

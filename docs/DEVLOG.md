@@ -372,3 +372,75 @@ One entry per cycle, newest last. This file is the loop's judgment; `ROADMAP.md`
   PostgreSQL repositories, which is where the audit triggers stop recording NULL actors and
   start recording real ones — and where TRD §8.2's atomicity guarantees finally get tested
   against a server rather than assumed.
+
+---
+
+## Cycle 6 — 2026-08-14 — the PostgreSQL unit of work and ProgressionModule's repositories
+
+- **Shipped:** `PgUnitOfWork` plus the three repositories `ProgressionModule` consumes — player,
+  class progress, ledger. **211 tests, 0 fail, 0 skipped**, typecheck clean from a wiped
+  `dist/`, scenario harness still green. Split from the roadmap item deliberately: six
+  repositories plus the unit of work plus the atomicity proof is more than one reviewable
+  commit, so Identity's three follow separately.
+
+- **The design decision that mattered: reads take no `Transaction`.** The repository contracts
+  pass a `Transaction` to writes but not to `get`/`list`/`getByName`. Sending reads to the pool
+  while writes went to the transaction's client would mean a module that writes and then reads
+  inside one `run` could not see its own uncommitted write. Rather than change the contracts —
+  which would have rippled through every module and stub — the unit of work establishes an
+  **`AsyncLocalStorage` context** and repositories resolve their executor as *ambient
+  transaction client, else pool*. Reads and writes join the same transaction automatically, and
+  because each `run` owns its context, **concurrent transactions work**. `node:async_hooks` is
+  built in, so this cost no dependency. The `tx` parameter survives in the signatures because
+  the contract requires it, and is not the mechanism.
+
+- **Concurrency is the whole point.** `InMemoryUnitOfWork` throws `ConcurrentUnitOfWork` by
+  design; the real one runs two simultaneous `run` calls to completion on separate pooled
+  connections, and a rollback in one no longer destroys the other's committed write — the exact
+  defect cycle 1's review found in the in-memory double. This is what CHARTER A1's re-ordering
+  bought, one milestone early.
+
+- **Cycle 2's unfixable gap is now fixed.** `register` check-then-inserts on the player name,
+  which no in-memory store can make safe. `player.name` is `citext NOT NULL UNIQUE` and the
+  repository translates SQLSTATE `23505` on that constraint into the existing `NameTaken`. The
+  check still earns its place — it produces the clean message — but the constraint is what
+  guarantees it.
+
+- **Mutation-tested against the compiled output, so the repo stayed untouched.** Replacing
+  `ROLLBACK` with `COMMIT` fails `rollback loses all writes`; making `executor()` ignore the
+  ambient context and always return the pool fails two more. Both mechanisms are genuinely
+  pinned.
+  **Worth recording precisely:** `read-your-own-writes` **survived** the second mutation,
+  because routing reads *and* writes to the pool keeps them consistent with each other. That
+  test cannot fail on its own; the rollback and actor-propagation tests are what actually catch
+  a broken transaction context. **A test can be correct, non-vacuous, and still not prove the
+  thing its name implies** — which is a subtler failure than cycle 5's vacuous assertion, and
+  only a mutation exposes it.
+
+- **A false green found at preflight, and it was the third of its kind.** With the database
+  unreachable, `npm test` printed `tests 147, pass 147, fail 0, skipped 0` — indistinguishable
+  from a healthy run, because **node:test never registers the subtests of a skipped suite**, so
+  38 tests vanished from every number a human would check, including the skipped count. Skipping
+  was right in M0, when the project had an in-memory fallback; from M1 PostgreSQL is required,
+  so it is now a false green. `npm test` sets `NOVA_REQUIRE_DB=1` and fails loudly (verified:
+  exit code 1); `npm run test:unit` remains as a deliberate opt-out.
+  The lineage: cycle 1's test command that passed while running nothing, cycle 4's single green
+  run of a stateful suite, and now a green run missing a fifth of its tests. **All three read as
+  success, and none of them would have been caught by reading the code.**
+
+- **One violation sent back:** `as any` on two ledger fields in product code. The branded
+  assertions at the row-mapping boundary (`row.id as PlayerId`) are correct and were left alone;
+  `as any` is different because it disables checking rather than narrowing an untyped row. Fixed
+  to `as PlacementId | null` / `as JobRunId | null`. Minor in isolation, and worth a round trip
+  because the repository layer is what every later module will copy — the same reasoning as
+  cycle 5's string-built SQL.
+
+- **Lead slip:** committed before writing this entry and the roadmap update, then amended. The
+  loop's landing step is commit *and* state files; doing them out of order is how a devlog ends
+  up reconstructed from memory instead of from the work.
+
+- **Missed in cycle 5's review:** `any` in `src/db/schema.test.ts` and `caps.test.ts`. Folded
+  into cycle 7 rather than left. A review that catches four things and misses a fifth of the
+  same class is worth noting, because the class was already in scope.
+
+- **Continue?** Yes. One slice from M1: Identity's three repositories and its integration.

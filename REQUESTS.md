@@ -73,7 +73,7 @@ Checked at the start of every cycle.
   **Until this lands, M1 (roadmap items 1–3) cannot start.** The loop is working ahead on the
   pure-logic slices that do not touch a database rather than idling — see cycle 4.
 
-- [ ] **2026-08-06, setup — non-blocking. STILL OPEN, and now the one that matters.** The SSH
+- [X] **2026-08-06, setup — non-blocking. STILL OPEN, and now the one that matters.** The SSH
   password for the backup host was shared in conversation and is therefore in this session's
   history. Worth rotating when convenient.
 
