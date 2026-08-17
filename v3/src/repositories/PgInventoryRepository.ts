@@ -37,15 +37,30 @@ export class PgInventoryRepository implements IInventoryRepository {
     _tx: Transaction
   ): Promise<void> {
     const exec = executor(this.pool);
+    let updated: number | null = null;
 
     try {
-      await exec.query(
-        `INSERT INTO player_inventory (player_id, tool_type_id, quantity)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (player_id, tool_type_id)
-         DO UPDATE SET quantity = player_inventory.quantity + EXCLUDED.quantity`,
-        [playerId, tool, delta]
-      );
+      if (delta >= 0) {
+        await exec.query(
+          `INSERT INTO player_inventory (player_id, tool_type_id, quantity)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (player_id, tool_type_id)
+           DO UPDATE SET quantity = player_inventory.quantity + EXCLUDED.quantity`,
+          [playerId, tool, delta]
+        );
+      } else {
+        // A negative delta cannot go through the upsert. PostgreSQL evaluates CHECK
+        // constraints against the proposed INSERT tuple — a bare negative quantity —
+        // before ON CONFLICT resolution, so `quantity >= 0` fires even when the existing
+        // row holds plenty. Verified: "Failing row contains (..., 0, -1)" with a row of 10
+        // already present. Decrements therefore have to be a plain UPDATE.
+        const result = await exec.query(
+          `UPDATE player_inventory SET quantity = quantity + $3
+           WHERE player_id = $1 AND tool_type_id = $2`,
+          [playerId, tool, delta]
+        );
+        updated = result.rowCount;
+      }
     } catch (error) {
       if (isPgError(error) && error.code === '23514') {
         if (error.constraint) {
@@ -55,6 +70,12 @@ export class PgInventoryRepository implements IInventoryRepository {
         }
       }
       throw error;
+    }
+
+    // No row at all means the player holds none of this tool, which is the same failure
+    // the CHECK reports when a row exists but is too small.
+    if (updated === 0) {
+      throw new NegativeInventory(tool);
     }
   }
 }

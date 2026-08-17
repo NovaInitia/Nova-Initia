@@ -102,3 +102,17 @@ export class UnknownNormalisationVersion extends Error {
     this.name = 'UnknownNormalisationVersion';
   }
 }
+
+export class AbilityLocked extends Error {
+  constructor(ability: string) {
+    super(`Ability not yet unlocked: ${ability}`);
+    this.name = 'AbilityLocked';
+  }
+}
+
+export class PagePlacementCapReached extends Error {
+  constructor(toolType: number, pageId: string) {
+    super(`Page placement cap reached for tool ${toolType} on page ${pageId}`);
+    this.name = 'PagePlacementCapReached';
+  }
+}

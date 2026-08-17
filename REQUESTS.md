@@ -3,6 +3,49 @@
 Checkbox protocol: unchecked items are open. Check an item and add a note to answer it.
 Checked at the start of every cycle.
 
+- [ ] **2026-08-17, cycle 9 — non-blocking, but it is a balance decision only you can make.**
+  **Signposts: 0 or 10 initial XP?** The sources disagree, and the disagreement is load-bearing
+  because signposts are the guide's benevolent tool and XP is half of what levelling needs.
+
+  | Source | Value |
+  |---|---|
+  | `config.js` (v2) | **0** |
+  | BRD-01 WF-5's table | **0** |
+  | v1's actual behaviour, per PHP-ERA-FINDINGS §"Signposts award 10 XP on use, not 0" | **10** |
+  | `balance/seed.ts` and the seeded database | **10** |
+
+  PHP-ERA-FINDINGS says *"under D1, `config.js` wins, but this one looks like an oversight in
+  the rewrite rather than a decision."* So the implemented value (10) follows v1's observed
+  behaviour and contradicts both the approved BRD and the stated decision rule.
+
+  **Proceeding with 10** — it is the status quo, it is what the recovered game actually did, and
+  0 would make signposts worthless for progression. Say the word and it becomes a one-row change
+  to `0002_reference_data.sql`'s successor plus `seed.ts`. Flagging it because a cycle should
+  not quietly overrule an approved BRD.
+
+- [ ] **2026-08-17, cycle 9 — needs a decision before doorways are placeable.**
+  BRD-01 WF-5 states a **doorway-specific page limit** that exists nowhere else in the design:
+  *"a page accepts at most 200 doorways in total; a single player may own at most 5 of them,
+  except a guide, who may own up to 200."*
+
+  This is a different shape from **D16** (250 per tool type, per page, **per player**), which is
+  what `SCHEMA-01` §8 and cycle 5's trigger actually implement. The doorway rule is partly
+  *per page across all players* (200 total), which no current constraint can express, and its
+  per-player limit varies by class (5, or 200 for guides).
+
+  Options: (a) implement it as an additional trigger reading `class_scalar`, (b) treat D16 as
+  having superseded it, (c) keep it but move the numbers into `balance_constant`. **Not
+  implemented this cycle** — placement ships with the D16 cap only, so doorways are currently
+  capped at 250 per player per page like everything else.
+
+- [ ] **2026-08-17, cycle 9 — informational, no action needed yet.**
+  PHP-ERA-FINDINGS records that in v1 **a failed placement still consumed the tool and still
+  paid XP** for traps, barrels, doorways and signposts, while spiders and shields were spared.
+  `class_scalar` carries `trap_fail_chance` (0.05 for every class) and the schema has a
+  `placement_failed` consumption cause, so the mechanism is reserved. BRD-01 WF-5 does not
+  mention random placement failure at all, so **it is not implemented**. Raising it so the
+  reserved cause is not mistaken for dead weight later.
+
 - [X] **2026-08-06, setup — non-blocking (becomes blocking at M3).** A **PostgreSQL server** is
   needed before milestone M3. `psql` is installed but no server is running and `postgres`/`pg_ctl`
   are not on PATH. Any of these works: install and start a local server (`sudo apt install

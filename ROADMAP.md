@@ -8,11 +8,11 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **PlacementModule** (M2, parcel 6) — placement with inventory, level gates, initial XP and
-   karma; barrel stashing; dismissal. The D16 cap is **already enforced** by the cycle-5
-   trigger; what this slice adds is the advisory lock on `(page, placer, tool)` that closes the
-   READ COMMITTED race (CHARTER A4), plus a clean typed error for the `23514` the trigger
-   raises.
+1. **PlacementModule: barrel stashing and dismissal** (M2, parcel 6) — completes the module.
+   `stashBarrel` writes the barrel and **every item placed inside it** in one transaction
+   (TRD §8.2), honouring `barrel_tool_capacity`, the 155/128 message limits and the
+   `barrel_stash_sg` gate. `dismiss` writes a `placement_interaction` row.
+   `PgBarrelContentRepository` already exists and is tested; only the module methods remain.
 2. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
 3. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
@@ -83,3 +83,12 @@ to second (CHARTER A1, Milestones).*
   leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
   transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
   The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.
+- [cycle 9] **`PlacementModule.place`** (M2, parcel 6) — placement with inventory, level gates,
+  the D16 cap, D17 snapshotting, initial XP and karma, plus `PgPlacementRepository` (five
+  subtypes), interaction and barrel-content repositories, `PgAdvisoryLock` and `Consumption`.
+  298 tests. Fixed a real bug in `PgInventoryRepository.adjust`: the upsert-with-delta idiom
+  cannot decrement, because PostgreSQL checks constraints against the proposed INSERT tuple
+  before `ON CONFLICT` resolution, so a negative delta always tripped `quantity >= 0`.
+  **Mutation testing showed CHARTER A4's advisory lock is redundant** — the cap is actually
+  enforced by cycle 5's trigger plus the row lock on `player_inventory`. The lock is kept as
+  defence in depth, and no test distinguishes it.
