@@ -95,3 +95,10 @@ export class UnsafeTestDatabase extends Error {
     this.name = 'UnsafeTestDatabase';
   }
 }
+
+export class UnknownNormalisationVersion extends Error {
+  constructor(version: number) {
+    super(`Unknown or retired normalisation version: ${version}`);
+    this.name = 'UnknownNormalisationVersion';
+  }
+}

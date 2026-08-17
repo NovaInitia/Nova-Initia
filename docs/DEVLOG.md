@@ -510,3 +510,83 @@ client and it is a thin substitute. If the goal were a demo rather than a correc
 ordering would be wrong.
 
 - **Continue?** Yes — M2, starting with `GeographyModule`.
+
+---
+
+## Cycle 8 — 2026-08-17 — GeographyModule. **M2 begun.**
+
+- **Shipped:** `GeographyModule` fully implemented — page and domain resolution, normalisation
+  version gating, presence enter/leave/touch/expire — plus the four PostgreSQL repositories it
+  consumes. **279 tests, 0 fail, 0 skipped**, three consecutive identical runs, typecheck clean
+  from a wiped `dist/`, zero `any` in `src/`, scenario harness green.
+
+- **`/tmp` was 100% full** (1.7 MB free of 436 MB), which is the likely reason the implementer
+  session destabilised. Cleared 190 MB, down to 53%. The biggest single item was an abandoned
+  167 MB installer, but **305 of the 410 entries were ours** — `mig-test-*` directories created
+  by `migrate.test.ts` via `mkdtemp` and never removed, accumulating since cycle 4. `CLAUDE.md`
+  requires tests write only to temp directories; it does not say clean up afterwards, and they
+  did not. Now removed in a `finally`.
+  **Lesson: "writes only to a temp directory" is half a rule.** The other half is that the test
+  owns that directory's lifetime.
+
+- **The implementer was cancelled mid-work and not restarted**, so the lead finished the slice
+  directly. The work on disk was sound — typecheck clean, module fully implemented, 278 of 281
+  passing — and the three failures were all in tests rather than product code.
+
+- **A test that decayed from correct to vacuous without anyone touching it.** `migrate.test.ts`'s
+  `rolls back failed migration` writes a deliberately broken migration and asserts the schema is
+  unchanged. It named the file `0003_bad.sql`. That was fine in cycle 4, when the real
+  migrations ended at `0002`. **Cycle 5 added a real `0003`** — so the runner now sees two files
+  claiming version 0003, hits a checksum mismatch, and throws *before executing any SQL*. The
+  test still passed: it caught an error (the wrong one), and `should_not_survive` was absent
+  (because nothing ran). Verified directly rather than reasoned about — a probe printed
+  `caught error name: MigrationChecksumMismatch`. Renamed to `9998_bad.sql` and the test now
+  asserts the error is **not** a checksum mismatch, so it cannot silently decay the same way.
+  **This is the most insidious failure mode seen so far: not a test written wrong, but a test
+  invalidated at a distance by an unrelated change, staying green throughout.** Nothing in the
+  loop's discipline would have caught it; only reading the fixture against the current migration
+  set did.
+
+- **Reference-data leakage, and it had already cost a debugging session.** `schema.test.ts`
+  registers `normalisation_version` 2 to prove a page can exist at two versions, and never
+  removes it. That table is reference data and therefore exempt from `freshDb()`'s truncation —
+  correctly, since truncating it would break every foreign key. The leaked row made a later
+  geography test's *expected rejection* stop happening, presenting as a mysterious failure in
+  code that was correct. Cleaned up in a `finally` at the source, and:
+  **`referenceData.test.ts` now covers `normalisation_version`** — exactly one row, version 1,
+  un-retired. That table was the one piece of reference data the cycle-4 drift test never
+  checked, which is why the leak survived four cycles.
+
+- **`BEGIN`/`ROLLBACK` issued through a connection pool is unsound**, and two tests did it. Each
+  `pool.query` may take a different connection, so the `UPDATE` can land outside the transaction
+  and commit while the `ROLLBACK` runs on a third connection with nothing open. One of these
+  retired normalisation version 1 — which, had it committed, would have broken *every* page
+  resolution in every later test. It passed only because the pool happened to reuse one idle
+  connection. Both rewritten to commit and restore in a `finally`.
+  **Lesson: a transaction is a property of a connection, not of a pool.** If a test needs one,
+  it must take a client — or not pretend to have one.
+
+- **Three tests asserting `>=` where only `>` proves anything.** `arrived2 >= arrived1` passes
+  when the timestamp never moved, which is precisely the bug. Same for `last_seen_at` on
+  re-entry and on `touch`. All three had a 10 ms sleep already, so strictness was free.
+
+- **A test whose name misdescribed its contents — three times.** `different normalisation
+  version yields different page` asserted an unknown version throws (a different property,
+  already covered elsewhere), with a comment admitting it had given up. The repository-level
+  `same hash at different version is different entity` did the same. Both now do what they say.
+  A test whose name claims a property it does not check is worse than a missing test, because it
+  reads as coverage precisely where coverage is absent.
+
+- **Mutation-checked:** dropping the `(url_hash, normalisation_version)` unique constraint fails
+  four geography tests including the concurrent-`resolvePage` race. The race is pinned to the
+  database guarantee, not to timing.
+
+- **Design decisions that held up:** `resolvePage` uses select → `INSERT … ON CONFLICT DO
+  NOTHING RETURNING` → re-select on a lost race, rather than the shorter `DO UPDATE … RETURNING`
+  idiom, so the hottest path in the system stays a single indexed read instead of rewriting a
+  row on every page view. And `enter` preserves `arrived_at` when re-entering the same page,
+  advancing only `last_seen_at`, so "how long has this player been here" keeps its meaning.
+
+- **Continue?** Yes. `PlacementModule` next — the D16 cap trigger already exists, so that slice
+  adds the advisory lock closing the READ COMMITTED race, plus typed errors for the `23514` the
+  trigger raises.

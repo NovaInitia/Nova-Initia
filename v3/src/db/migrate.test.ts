@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { mkdtemp, writeFile } from 'fs/promises';
+import { mkdtemp, writeFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { closeDb, DB_SKIP, freshDb } from './testDb.js';
@@ -41,11 +41,11 @@ describe('migration runner', { skip: DB_SKIP }, () => {
   });
 
   test('detects checksum tamper', async () => {
+    // Created before the try so the finally can always remove it.
+    const tempDir = await mkdtemp(join(tmpdir(), 'mig-test-'));
     const pool = await freshDb();
 
     try {
-      // Create temp dir with real migrations
-      const tempDir = await mkdtemp(join(tmpdir(), 'mig-test-'));
 
       // Copy real migration files
       const fs = await import('fs/promises');
@@ -82,6 +82,7 @@ describe('migration runner', { skip: DB_SKIP }, () => {
       // but tamper detection stopped it before schema_migration was modified.
       // No cleanup needed for this test.
     } finally {
+      await rm(tempDir, { recursive: true, force: true });
       await closeDb(pool);
     }
   });
@@ -118,11 +119,11 @@ describe('migration runner', { skip: DB_SKIP }, () => {
   });
 
   test('rolls back failed migration', async () => {
+    // Created before the try so the finally can always remove it.
+    const tempDir = await mkdtemp(join(tmpdir(), 'mig-test-'));
     const pool = await freshDb();
 
     try {
-      // Create temp dir with a bad migration (after the real ones)
-      const tempDir = await mkdtemp(join(tmpdir(), 'mig-test-'));
 
       const fs = await import('fs/promises');
 
@@ -137,20 +138,31 @@ describe('migration runner', { skip: DB_SKIP }, () => {
         await writeFile(join(tempDir, file), content, 'utf8');
       }
 
-      // Add a bad migration
+      // The version must be higher than every real migration. Naming this 0003 while a
+      // real 0003 exists makes the runner reject it on a checksum mismatch before the SQL
+      // ever executes — which is how this test silently stopped testing rollback when
+      // cycle 5 added a third migration, while staying green.
       const badMigration = `CREATE TABLE should_not_survive (id uuid PRIMARY KEY);
 INVALID SQL HERE;`;
-      await writeFile(join(tempDir, '0003_bad.sql'), badMigration, 'utf8');
+      await writeFile(join(tempDir, '9998_bad.sql'), badMigration, 'utf8');
 
-      // Try to run migrations from temp dir; should fail on 0003
-      let caught = false;
+      // Try to run migrations from temp dir; should fail executing the bad SQL
+      let caught: unknown = null;
       try {
         await runMigrations(pool, tempDir);
       } catch (error) {
-        caught = true;
+        caught = error;
       }
 
       assert.ok(caught, 'Expected migration to fail');
+      assert.ok(
+        !(caught instanceof MigrationChecksumMismatch),
+        'Expected a SQL failure, not a checksum mismatch — the bad migration must actually run'
+      );
+      assert.ok(
+        !(caught instanceof MissingAppliedMigration),
+        'Expected a SQL failure, not a missing-file error'
+      );
 
       // Verify table was not created (rolled back)
       const result = await pool.query(
@@ -169,6 +181,7 @@ INVALID SQL HERE;`;
       // Clean up: the failure on 0003 should have rolled back before schema_migration insert,
       // so no migration records were created for this test. No cleanup needed.
     } finally {
+      await rm(tempDir, { recursive: true, force: true });
       await closeDb(pool);
     }
   });

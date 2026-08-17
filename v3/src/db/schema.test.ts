@@ -272,6 +272,14 @@ describe('schema constraints', { skip: DB_SKIP }, () => {
         [randomUuid(), urlHash, domain2Id, 2]
       );
     } finally {
+      // normalisation_version is reference data and exempt from freshDb() truncation, so
+      // the version-2 row registered above outlives this test unless it is removed. It must
+      // happen here rather than at the end of the try: a failing assertion would otherwise
+      // skip it and leak. Leaving it behind made a later geography test's expected
+      // rejection stop happening, which cost a debugging session in cycle 8.
+      await pool.query('DELETE FROM page WHERE normalisation_version = 2');
+      await pool.query('DELETE FROM domain WHERE normalisation_version = 2');
+      await pool.query('DELETE FROM normalisation_version WHERE version = 2');
       await closeDb(pool);
     }
   });

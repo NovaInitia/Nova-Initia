@@ -8,26 +8,22 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **GeographyModule** (M2, parcel 5) — page/domain resolution, normalisation-version gating,
-   presence enter/leave/expire. **Note:** the URL normaliser itself is *not* server work —
-   BRD-01 F.4 puts execution on the client and leaves the server owning only the specification
-   and the version gate. Cycle 4 nearly built one before re-reading F.4; do not repeat that.
-2. **PlacementModule** (M2, parcel 6) — placement with inventory, level gates, initial XP and
+1. **PlacementModule** (M2, parcel 6) — placement with inventory, level gates, initial XP and
    karma; barrel stashing; dismissal. The D16 cap is **already enforced** by the cycle-5
    trigger; what this slice adds is the advisory lock on `(page, placer, tool)` that closes the
    READ COMMITTED race (CHARTER A4), plus a clean typed error for the `23514` the trigger
    raises.
-3. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+2. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-4. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-5. **EconomyModule: purchase and level-up** (M3, parcel 8).
-6. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+3. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+4. **EconomyModule: purchase and level-up** (M3, parcel 8).
+5. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-7. **WorldModule: wandering spiders** (M3, parcel 9).
+6. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -79,3 +75,11 @@ to second (CHARTER A1, Milestones).*
   (which does not) into `InventoryCapExceeded`. The concurrent same-name registration test is
   mutation-checked: dropping `player_name_key` makes it fail, so it is pinned to the database
   guarantee rather than to timing.
+- [cycle 8] **`GeographyModule`** (M2, parcel 5) — page/domain resolution, version gating,
+  presence enter/leave/touch/expire, plus its four PostgreSQL repositories. 279 tests.
+  **M2 begun.** `resolvePage` resolves-or-creates without rewriting rows, since it runs on every
+  page entry. Fixed four test defects inherited from earlier cycles: a rollback test that
+  silently decayed to vacuous when cycle 5 added a third migration, a `normalisation_version`
+  leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
+  transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
+  The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.

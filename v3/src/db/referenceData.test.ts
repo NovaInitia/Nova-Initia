@@ -252,4 +252,28 @@ describe('reference data anti-drift', { skip: DB_SKIP }, () => {
       await closeDb(pool);
     }
   });
+
+  // normalisation_version is reference data and therefore exempt from freshDb()'s
+  // truncation, so a test that registers a version or retires one and fails to restore it
+  // silently corrupts every later run. Cycle 8 lost a debugging session to a leaked
+  // version 2 that made an expected rejection stop happening. This is the drift check.
+  test('normalisation_version holds exactly the seeded version 1, un-retired', async () => {
+    const pool = await freshDb();
+
+    try {
+      const rows = await pool.query(
+        'SELECT version, retired_at FROM normalisation_version ORDER BY version'
+      );
+
+      assert.equal(rows.rows.length, 1, 'expected exactly one normalisation version');
+      assert.equal(rows.rows[0].version, 1);
+      assert.equal(
+        rows.rows[0].retired_at,
+        null,
+        'version 1 must not be retired — a leaked retirement breaks every page resolution'
+      );
+    } finally {
+      await closeDb(pool);
+    }
+  });
 });
