@@ -13,17 +13,31 @@ to second (CHARTER A1, Milestones).*
    (TRD §8.2), honouring `barrel_tool_capacity`, the 155/128 message limits and the
    `barrel_stash_sg` gate. `dismiss` writes a `placement_interaction` row.
    `PgBarrelContentRepository` already exists and is tested; only the module methods remain.
-2. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+2. **Placement failure** (M2, WF-5 completion) — every placeable tool gains a failure chance;
+   shields cannot fail because they are never placed. v1 defined the *consequences* of failure
+   and never wired up the *decision*: `User::useTool($toolID, $fail)` takes `$fail` as a
+   parameter. On failure a trap, barrel, doorway or signpost is consumed and still pays XP,
+   while a spider is spared — v1 guarded those on `&& !$fail`.
+   Needs `tool_type.fail_chance` (migration `0004`, 0.05 everywhere and 0 for shield,
+   superseding `class_scalar.trap_fail_chance`), an **injected random source** so tests are
+   deterministic, and `place` returning a `PlacementOutcome` rather than a bare `Placement` —
+   a failed placement has no placement row but the caller still must learn the tool was spent.
+3. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
+   (200 for a guide) and `total` 200 across **all** players on a page. Confirmed a *placement*
+   limit, distinct from `charges`, which are the uses. `own` varies by class so it belongs in
+   `class_scalar`; `total` is class-independent and belongs in `balance_constant`. `total` needs
+   a new trigger — counting across every placer on a page is a shape no existing constraint has.
+4. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-3. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-4. **EconomyModule: purchase and level-up** (M3, parcel 8).
-5. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+5. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+6. **EconomyModule: purchase and level-up** (M3, parcel 8).
+7. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-6. **WorldModule: wandering spiders** (M3, parcel 9).
+8. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 

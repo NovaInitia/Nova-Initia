@@ -3,7 +3,7 @@
 Checkbox protocol: unchecked items are open. Check an item and add a note to answer it.
 Checked at the start of every cycle.
 
-- [ ] **2026-08-17, cycle 9 — non-blocking, but it is a balance decision only you can make.**
+- [X] **2026-08-17, cycle 9 — non-blocking, but it is a balance decision only you can make.**
   **Signposts: 0 or 10 initial XP?** The sources disagree, and the disagreement is load-bearing
   because signposts are the guide's benevolent tool and XP is half of what levelling needs.
 
@@ -22,8 +22,10 @@ Checked at the start of every cycle.
   0 would make signposts worthless for progression. Say the word and it becomes a one-row change
   to `0002_reference_data.sql`'s successor plus `seed.ts`. Flagging it because a cycle should
   not quietly overrule an approved BRD.
+  
+  Answer: 10
 
-- [ ] **2026-08-17, cycle 9 — needs a decision before doorways are placeable.**
+- [X] **2026-08-17, cycle 9 — ANSWERED: it is a placement limit.**
   BRD-01 WF-5 states a **doorway-specific page limit** that exists nowhere else in the design:
   *"a page accepts at most 200 doorways in total; a single player may own at most 5 of them,
   except a guide, who may own up to 200."*
@@ -38,13 +40,62 @@ Checked at the start of every cycle.
   implemented this cycle** — placement ships with the D16 cap only, so doorways are currently
   capped at 250 per player per page like everything else.
 
-- [ ] **2026-08-17, cycle 9 — informational, no action needed yet.**
+  Question: Is the (5, or 200 for guides) a limit on Doorway uses, or Doorway placement? These things are different.
+
+  > **Answered 2026-08-17 — it is placement, and `config.js` settles it.** Lines 188-190:
+  > ```js
+  > pageLimits: {giver:    {own: 5,   total: 200},
+  >              guardian: {own: 5,   total: 200},
+  >              guide:    {own: 200, total: 200}
+  > ```
+  > The name is `pageLimits`, and it sits in the doorway block **alongside** `charges`
+  > (`[{level: 0, charge: 50}, {level: 15, charge: 100}]`). Charges are the uses; `pageLimits`
+  > are the placements. The design already separates the two concepts on the same object, so
+  > the ambiguity is in the BRD's prose rather than in the rule.
+  >
+  > - `own` — doorways **this player** may have standing on this page (5, or 200 for a guide).
+  > - `total` — doorways **from all players combined** on this page (200).
+  >
+  > This also settles its relation to **D16**: they are both placement limits at different
+  > granularity, so D16 did not supersede it. Option (b) is out.
+  >
+  > **Proceeding with option (c)** — implement it, with the numbers as reference data rather
+  > than literals, so an operator can tune them like every other balance scalar (D23). `own`
+  > varies by class so it belongs in `class_scalar` as `doorway_page_own_limit`; `total` is
+  > class-independent and belongs in `balance_constant` as `doorway_page_total_limit`.
+  > `total` needs a new trigger: it counts across **all** placers on the page, which no
+  > existing constraint expresses. Say so if you would rather leave doorways on the D16 cap.
+
+- [X] **2026-08-17, cycle 9 — informational, no action needed yet.**
   PHP-ERA-FINDINGS records that in v1 **a failed placement still consumed the tool and still
   paid XP** for traps, barrels, doorways and signposts, while spiders and shields were spared.
   `class_scalar` carries `trap_fail_chance` (0.05 for every class) and the schema has a
   `placement_failed` consumption cause, so the mechanism is reserved. BRD-01 WF-5 does not
   mention random placement failure at all, so **it is not implemented**. Raising it so the
   reserved cause is not mistaken for dead weight later.
+  All tools but shields should have chance for failure. It's possible even in PHP version this wasn't finished. If you can, finish the implementation.
+
+  > **Accepted 2026-08-17. Your instinct was right — it was never finished.** Karma is awarded
+  > in `User::useTool($toolID, $fail)`, and **`$fail` is a parameter passed in**, not computed
+  > there. v1 defined what happens *when* a placement fails and never wired up what decides
+  > *whether* it does.
+  >
+  > Implementing it across all five placeable tools. Two calls I am making rather than guessing
+  > silently — say the word if either is wrong:
+  >
+  > 1. **Karma follows XP.** v1's evidence covers inventory and XP but is silent on karma. I am
+  >    treating karma the same as XP: it moves for the four tools that are consumed on failure,
+  >    and not for spiders, which v1 spared entirely. The alternative — karma always moves
+  >    because the player *acted* — is defensible; it is just not what the surrounding code does.
+  > 2. **`place` stops returning a bare `Placement`.** A failed placement produces no placement
+  >    row, yet the caller still needs to know the tool was consumed and XP paid. Returning
+  >    `PlacementOutcome { placement, failed, toolConsumed, xpAwarded }` says that honestly.
+  >    Throwing would be wrong: failure is an ordinary outcome of the game, not an error.
+  >
+  > The chance itself moves to `tool_type.fail_chance` (0.05 everywhere, 0 for shield), which
+  > expresses "shields never fail" structurally. `class_scalar.trap_fail_chance` is superseded
+  > and its three rows go with the same migration; it is seeded reference data with no consumer,
+  > not user data.
 
 - [X] **2026-08-06, setup — non-blocking (becomes blocking at M3).** A **PostgreSQL server** is
   needed before milestone M3. `psql` is installed but no server is running and `postgres`/`pg_ctl`
