@@ -8,22 +8,17 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
-   (200 for a guide) and `total` 200 across **all** players on a page. Confirmed a *placement*
-   limit, distinct from `charges`, which are the uses. `own` varies by class so it belongs in
-   `class_scalar`; `total` is class-independent and belongs in `balance_constant`. `total` needs
-   a new trigger — counting across every placer on a page is a shape no existing constraint has.
-2. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+1. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-3. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-4. **EconomyModule: purchase and level-up** (M3, parcel 8).
-5. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+2. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+3. **EconomyModule: purchase and level-up** (M3, parcel 8).
+4. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-6. **WorldModule: wandering spiders** (M3, parcel 9).
+5. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -83,6 +78,11 @@ to second (CHARTER A1, Milestones).*
   leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
   transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
   The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.
+- [cycle 12] **Doorway page limits** (M2, WF-5 completion) — migration `0005`, both limits as
+  reference data, and a page-level advisory lock. 339 tests. **WF-5 complete.** `own` is
+  enforced in module and trigger; `total` only in the trigger, because counting by page across
+  all players has no repository interface and widening one was out of scope. Distinct SQLSTATEs
+  `NI010`/`NI011` keep the two rules apart without matching on message text.
 - [cycle 11] **Placement failure** (M2, WF-5 completion) — migration `0004` adds
   `tool_type.fail_chance`; `place` and `stashBarrel` return `PlacementOutcome`; randomness is
   injected. 331 tests. Failure is **uniform across all five tools** by Owner decision, a

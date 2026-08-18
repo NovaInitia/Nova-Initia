@@ -142,6 +142,19 @@ describe('reference data anti-drift', { skip: DB_SKIP }, () => {
         assert.equal(db.metric, seed.metric, `Scalar ${i}: metric mismatch`);
         assert.equal(Number(db.value), seed.value, `Scalar ${i}: value mismatch`);
       }
+
+      // Specific checks for doorway_page_own_limit
+      const giverDoorwayOwn = dbScalars.find(r => r.class_id === 1 && r.metric === 'doorway_page_own_limit');
+      assert.ok(giverDoorwayOwn, 'doorway_page_own_limit for giver must exist');
+      assert.equal(Number(giverDoorwayOwn.value), 5, 'giver doorway_page_own_limit must be 5');
+
+      const guardianDoorwayOwn = dbScalars.find(r => r.class_id === 2 && r.metric === 'doorway_page_own_limit');
+      assert.ok(guardianDoorwayOwn, 'doorway_page_own_limit for guardian must exist');
+      assert.equal(Number(guardianDoorwayOwn.value), 5, 'guardian doorway_page_own_limit must be 5');
+
+      const guideDoorwayOwn = dbScalars.find(r => r.class_id === 3 && r.metric === 'doorway_page_own_limit');
+      assert.ok(guideDoorwayOwn, 'doorway_page_own_limit for guide must exist');
+      assert.equal(Number(guideDoorwayOwn.value), 200, 'guide doorway_page_own_limit must be 200');
     } finally {
       await closeDb(pool);
     }
@@ -197,6 +210,11 @@ describe('reference data anti-drift', { skip: DB_SKIP }, () => {
         assert.equal(db.code, seedCode, `Constant ${i}: code mismatch`);
         assert.equal(Number(db.value), SEED_BALANCE.constants[seedCode], `Constant ${seedCode}: value mismatch`);
       }
+
+      // Specific check for doorway_page_total_limit since it's new
+      const doorwayTotalLimit = dbConstants.find(r => r.code === 'doorway_page_total_limit');
+      assert.ok(doorwayTotalLimit, 'doorway_page_total_limit must exist');
+      assert.equal(Number(doorwayTotalLimit.value), 200, 'doorway_page_total_limit must be 200');
     } finally {
       await closeDb(pool);
     }

@@ -27,6 +27,8 @@ export interface IBalanceTable {
   extremityBonusFor(tool: ToolType, karma: number): number;
   shieldChargesFor(forClass: PlayerClass): number;
   doorwayChargesFor(forClass: PlayerClass, level: number): number;
+  doorwayPageOwnLimit(forClass: PlayerClass): number;
+  doorwayPageTotalLimit(): number;
   doorwayPassThroughLimit(isPlacer: boolean): number;
   doorwayTransportChance(level: number): number;
   forcedDoorwayChance(placerClass: PlayerClass): number;

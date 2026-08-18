@@ -4,7 +4,9 @@ import {
   PagePlacementCapReached,
   BarrelCapacityExceeded,
   MessageTooLong,
-  HtmlNotPermitted
+  HtmlNotPermitted,
+  DoorwayPageOwnLimitReached,
+  DoorwayPageTotalLimitReached
 } from '../domain/errors.js';
 import { ProgressionModule } from './progression.js';
 import type { IUnitOfWork, IAdvisoryLock } from '../contracts/unitOfWork.js';
@@ -83,11 +85,22 @@ export class PlacementModule {
 
     // Step 3: Open unit of work and do everything remaining inside it
     return await this.unitOfWork.run(actor.id, async (tx) => {
-      // Step 3a: Take the advisory lock
+      // Step 3a: Take the advisory lock for the (page, placer, tool) triple
       const lockKey = `placement:${page.id}:${actor.id}:${spec.toolType}`;
       const acquired = await this.advisoryLock.tryAcquire(lockKey);
       if (!acquired) {
         throw new Error('Failed to acquire advisory lock');
+      }
+
+      // Step 3a1: For doorways, also take a page-level lock to serialize total-limit checks
+      let pageLockedForDoorway = false;
+      if (spec.toolType === ToolType.Doorway) {
+        const pageKeyForDoorway = `doorway-page:${page.id}`;
+        const pageAcquired = await this.advisoryLock.tryAcquire(pageKeyForDoorway);
+        if (!pageAcquired) {
+          throw new Error('Failed to acquire page-level advisory lock for doorway');
+        }
+        pageLockedForDoorway = true;
       }
 
       try {
@@ -96,6 +109,15 @@ export class PlacementModule {
         const cap = this.balance.pagePlacementCap();
         if (currentCount >= cap) {
           throw new PagePlacementCapReached(spec.toolType, page.id);
+        }
+
+        // Step 3b1: For doorways, check the own page limit
+        if (spec.toolType === ToolType.Doorway) {
+          const ownLimit = this.balance.doorwayPageOwnLimit(actor.activeClass);
+          const ownCount = await this.placements.countOnPageBy(page.id, actor.id, ToolType.Doorway);
+          if (ownCount >= ownLimit) {
+            throw new DoorwayPageOwnLimitReached(actor.id, page.id);
+          }
         }
 
         // Step 3c: Roll for failure
@@ -127,7 +149,11 @@ export class PlacementModule {
           // Adjust karma even on failure (with null placementId)
           await this.progression.adjustKarma(tx, actor, spec.toolType, null);
 
-          // Release the advisory lock before returning
+          // Release the advisory locks before returning
+          if (pageLockedForDoorway) {
+            const pageKeyForDoorway = `doorway-page:${page.id}`;
+            await this.advisoryLock.release(pageKeyForDoorway);
+          }
           await this.advisoryLock.release(lockKey);
 
           return {
@@ -215,9 +241,26 @@ export class PlacementModule {
           } as unknown as SignpostPlacement;
         }
 
-        await this.placements.save(placement, tx);
+        // Step 3f: Try to insert the placement
+        // This may fail with NI010/NI011 from the trigger if limits are reached
+        try {
+          await this.placements.save(placement, tx);
+        } catch (err) {
+          // Translate NI010/NI011 (trigger's limit errors) to our exceptions
+          // PostgreSQL errors have a `code` property with the SQLSTATE
+          if (err instanceof Error) {
+            const pgErr = err as Error & { code?: string };
+            if (pgErr.code === 'NI010') {
+              throw new DoorwayPageOwnLimitReached(actor.id, page.id);
+            }
+            if (pgErr.code === 'NI011') {
+              throw new DoorwayPageTotalLimitReached(page.id);
+            }
+          }
+          throw err;
+        }
 
-        // Step 3f: Award initial XP
+        // Step 3g: Award initial XP
         const xpAmount = this.balance.initialXpFor(spec.toolType);
         await this.progression.awardXp(
           tx,
@@ -228,10 +271,14 @@ export class PlacementModule {
           placementId
         );
 
-        // Step 3g: Adjust karma
+        // Step 3h: Adjust karma
         await this.progression.adjustKarma(tx, actor, spec.toolType, placementId);
 
-        // Release the advisory lock before returning
+        // Release the advisory locks before returning
+        if (pageLockedForDoorway) {
+          const pageKeyForDoorway = `doorway-page:${page.id}`;
+          await this.advisoryLock.release(pageKeyForDoorway);
+        }
         await this.advisoryLock.release(lockKey);
 
         return {
@@ -241,7 +288,15 @@ export class PlacementModule {
           xpAwarded: xpAmount
         };
       } catch (err) {
-        // If something failed, try to release the lock (best effort)
+        // If something failed, try to release both locks (best effort)
+        try {
+          if (pageLockedForDoorway) {
+            const pageKeyForDoorway = `doorway-page:${page.id}`;
+            await this.advisoryLock.release(pageKeyForDoorway);
+          }
+        } catch {
+          // Ignore errors during cleanup
+        }
         try {
           await this.advisoryLock.release(lockKey);
         } catch {

@@ -6,7 +6,7 @@ import type { PlayerId, PageId } from '../domain/ids.js';
 import type { Player } from '../domain/player.js';
 import type { Pool } from 'pg';
 import type { Page } from '../domain/geography.js';
-import type { PlacementSpec, BarrelSpec } from '../domain/placement.js';
+import type { PlacementSpec, BarrelSpec, Placement } from '../domain/placement.js';
 import type { DomainId } from '../domain/ids.js';
 import { DB_SKIP, freshDb, closeDb } from '../db/testDb.js';
 import { SEED_BALANCE } from '../balance/seed.js';
@@ -30,7 +30,9 @@ import {
   NegativeInventory,
   BarrelCapacityExceeded,
   MessageTooLong,
-  HtmlNotPermitted
+  HtmlNotPermitted,
+  DoorwayPageOwnLimitReached,
+  DoorwayPageTotalLimitReached
 } from '../domain/errors.js';
 import { PgDomainRepository } from '../repositories/PgDomainRepository.js';
 
@@ -2216,6 +2218,340 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
         excludeDismissedFor: playerId2
       });
       assert.ok(list2.find(p => p.id === placement.id), 'player 2: placement visible');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway own limit: giver at 5th placement succeeds, 6th throws', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+      const limit = h.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      assert.equal(limit, 5, 'test assumes giver own limit is 5');
+
+      const pageId = h.page.id;
+      const player = h.player;
+
+      // Place 5 doorways
+      for (let i = 0; i < limit; i++) {
+        const outcome = await h.placement.place(player, h.page, {
+          toolType: ToolType.Doorway,
+          destinationUrl: `http://example.com/${i}`
+        });
+        assert.ok(outcome.placement, `placement ${i + 1} should succeed`);
+      }
+
+      // 6th should fail
+      const failOutcome = await h.placement.place(player, h.page, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'http://example.com/fail'
+      }).catch(e => e);
+
+      assert.ok(failOutcome instanceof DoorwayPageOwnLimitReached, 'should throw DoorwayPageOwnLimitReached');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway own limit: guide at 200th placement succeeds, proves class-dependent', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guide);
+      const guideLimit = h.balance.doorwayPageOwnLimit(PlayerClass.Guide);
+      const giverLimit = h.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      assert.equal(guideLimit, 200, 'guide own limit should be 200');
+      assert.equal(giverLimit, 5, 'giver own limit should be 5');
+      assert.notEqual(guideLimit, giverLimit, 'limits should differ to prove class-dependent');
+
+      const player = h.player;
+
+      // Place guideLimitCount doorways in a loop
+      // To do this efficiently, we'll use a direct SQL insert with generate_series
+      // after the module logic to populate the placement table directly
+      // But for clarity and to test the module, let's place a few and then verify
+
+      // Place 200 doorways
+      for (let i = 0; i < guideLimit; i++) {
+        const outcome = await h.placement.place(player, h.page, {
+          toolType: ToolType.Doorway,
+          destinationUrl: `http://example.com/${i}`
+        });
+        assert.ok(outcome.placement, `guide placement ${i + 1} should succeed`);
+      }
+
+      // Verify guide can place 200 where giver can only place 5
+      const list = await h.placementRepo.list(h.page.id, {
+        liveOnly: true,
+        excludeNsfw: false,
+        toolTypes: [ToolType.Doorway]
+      });
+      assert.equal(list.length, guideLimit, `should have ${guideLimit} doorways on page`);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway own limit is per-page: giver at limit on one page can place on another', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+      const limit = h.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      const player = h.player;
+
+      // Create a second page using direct SQL
+      const pageId2 = randomUUID() as PageId;
+      const page2 = makePage(pageId2, h.page.domainId);
+      const tx = { id: 'page2' };
+      await pool.query(
+        `INSERT INTO page (id, url_hash, domain_id, normalisation_version, first_seen_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [pageId2, page2.urlHash, h.page.domainId, 1, new Date()]
+      );
+
+      // Fill first page
+      for (let i = 0; i < limit; i++) {
+        const outcome = await h.placement.place(player, h.page, {
+          toolType: ToolType.Doorway,
+          destinationUrl: `http://example.com/page1/${i}`
+        });
+        assert.ok(outcome.placement);
+      }
+
+      // Should still be able to place on second page
+      const outcome = await h.placement.place(player, page2, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'http://example.com/page2/0'
+      });
+      assert.ok(outcome.placement, 'should place on different page despite being at limit on first page');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway own limit is per-player: one giver at limit does not stop another giver', async () => {
+    const pool = await freshDb();
+    try {
+      const h1 = await harness(pool, PlayerClass.Giver);
+      const limit = h1.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      const pageId = h1.page.id;
+
+      // Create second giver
+      const playerId2 = randomUUID() as PlayerId;
+      const player2 = makePlayer(playerId2, PlayerClass.Giver);
+      const tx = { id: 'player2' };
+
+      // Insert directly via SQL to create second player
+      await pool.query(
+        `INSERT INTO player (id, name, credential_hash, email, active_class_id, karma, sg, is_moderator, is_operator, is_active, avatar_url, comment, registered_at, last_active_at, last_stipend_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [playerId2, player2.name, player2.credentialHash, player2.email, player2.activeClass, player2.karma, player2.sg, player2.isModerator, player2.isOperator, player2.isActive, player2.avatarUrl, player2.comment, player2.registeredAt, player2.lastActiveAt, player2.lastStipendAt]
+      );
+
+      for (const cls of [PlayerClass.Giver, PlayerClass.Guardian, PlayerClass.Guide]) {
+        await pool.query(
+          `INSERT INTO player_class_progress (player_id, class_id, level, experience)
+           VALUES ($1, $2, $3, $4)`,
+          [playerId2, cls, 20, 0]
+        );
+      }
+
+      await pool.query(
+        `INSERT INTO player_inventory (player_id, tool_type_id, quantity)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (player_id, tool_type_id) DO UPDATE SET quantity = player_inventory.quantity + $3`,
+        [playerId2, ToolType.Doorway, 100]
+      );
+
+      // Fill first giver's quota
+      for (let i = 0; i < limit; i++) {
+        const outcome = await h1.placement.place(h1.player, h1.page, {
+          toolType: ToolType.Doorway,
+          destinationUrl: `http://example.com/giver1/${i}`
+        });
+        assert.ok(outcome.placement);
+      }
+
+      // Second giver should still be able to place
+      const outcome = await h1.placement.place(player2, h1.page, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'http://example.com/giver2/0'
+      });
+      assert.ok(outcome.placement, 'second giver should place despite first giver at limit');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway own limit: consumed doorways do not count', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+      const limit = h.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      const player = h.player;
+
+      // Place 5 doorways
+      const placements: Placement[] = [];
+      for (let i = 0; i < limit; i++) {
+        const outcome = await h.placement.place(player, h.page, {
+          toolType: ToolType.Doorway,
+          destinationUrl: `http://example.com/${i}`
+        });
+        assert.ok(outcome.placement);
+        placements.push(outcome.placement);
+      }
+
+      // Mark the first one as consumed
+      const tx = { id: 'consume' };
+      await h.placementRepo.markConsumed(placements[0].id, 'depleted', new Date(), tx);
+
+      // Now we should be able to place a new one
+      const outcome = await h.placement.place(player, h.page, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'http://example.com/after-consume'
+      });
+      assert.ok(outcome.placement, 'should place after consuming one (count should be 4 < 5)');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway total limit: page full of doorways throws on next placement', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guide);
+      const totalLimit = h.balance.doorwayPageTotalLimit();
+      assert.equal(totalLimit, 200, 'test assumes total limit is 200');
+
+      const pageId = h.page.id;
+
+      // Use direct SQL to bulk-insert totalLimit doorways by different guides
+      // Create several guide players first
+      const guideIds: PlayerId[] = [];
+      for (let p = 0; p < 5; p++) {
+        const playerId = randomUUID() as PlayerId;
+        const player = makePlayer(playerId, PlayerClass.Guide);
+        // Insert player
+        await pool.query(
+          `INSERT INTO player (id, name, credential_hash, email, active_class_id, karma, sg, is_moderator, is_operator, is_active, avatar_url, comment, registered_at, last_active_at, last_stipend_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          [playerId, player.name, player.credentialHash, player.email, player.activeClass, player.karma, player.sg, player.isModerator, player.isOperator, player.isActive, player.avatarUrl, player.comment, player.registeredAt, player.lastActiveAt, player.lastStipendAt]
+        );
+        // Insert class progress
+        for (const cls of [PlayerClass.Giver, PlayerClass.Guardian, PlayerClass.Guide]) {
+          await pool.query(
+            `INSERT INTO player_class_progress (player_id, class_id, level, experience)
+             VALUES ($1, $2, $3, $4)`,
+            [playerId, cls, 20, 0]
+          );
+        }
+        guideIds.push(playerId);
+      }
+
+      // Bulk insert doorways via SQL
+      const placements = totalLimit;
+      const placementsPerPlayer = Math.floor(placements / guideIds.length);
+      const extraForFirst = placements - (placementsPerPlayer * guideIds.length);
+
+      let placedCount = 0;
+      for (let p = 0; p < guideIds.length; p++) {
+        const count = (p === 0) ? (placementsPerPlayer + extraForFirst) : placementsPerPlayer;
+        const result = await pool.query(
+          `INSERT INTO placement (page_id, placer_id, tool_type_id, placer_class_id, placer_level)
+           SELECT $1, $2, 4, $3, 1
+           FROM generate_series(1, $4)`,
+          [pageId, guideIds[p], PlayerClass.Guide, count]
+        );
+        placedCount += count;
+      }
+      assert.equal(placedCount, totalLimit, `should have inserted ${totalLimit} doorways`);
+
+      // Now module placement should fail with DoorwayPageTotalLimitReached
+      const failOutcome = await h.placement.place(h.player, h.page, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'http://example.com/over-limit'
+      }).catch(e => e);
+
+      assert.ok(failOutcome instanceof DoorwayPageTotalLimitReached, 'should throw DoorwayPageTotalLimitReached for total limit');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway limits do not affect other tool types: traps unaffected by doorway total', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+      const totalLimit = h.balance.doorwayPageTotalLimit();
+      const pageId = h.page.id;
+
+      // Bulk-insert doorways to reach total limit (using guides)
+      const guideIds: PlayerId[] = [];
+      for (let p = 0; p < 2; p++) {
+        const playerId = randomUUID() as PlayerId;
+        const player = makePlayer(playerId, PlayerClass.Guide);
+        // Insert player
+        await pool.query(
+          `INSERT INTO player (id, name, credential_hash, email, active_class_id, karma, sg, is_moderator, is_operator, is_active, avatar_url, comment, registered_at, last_active_at, last_stipend_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          [playerId, player.name, player.credentialHash, player.email, player.activeClass, player.karma, player.sg, player.isModerator, player.isOperator, player.isActive, player.avatarUrl, player.comment, player.registeredAt, player.lastActiveAt, player.lastStipendAt]
+        );
+        // Insert class progress
+        for (const cls of [PlayerClass.Giver, PlayerClass.Guardian, PlayerClass.Guide]) {
+          await pool.query(
+            `INSERT INTO player_class_progress (player_id, class_id, level, experience)
+             VALUES ($1, $2, $3, $4)`,
+            [playerId, cls, 20, 0]
+          );
+        }
+        guideIds.push(playerId);
+      }
+
+      const result = await pool.query(
+        `INSERT INTO placement (page_id, placer_id, tool_type_id, placer_class_id, placer_level)
+         SELECT $1, $2, 4, $3, 1
+         FROM generate_series(1, $4)`,
+        [pageId, guideIds[0], PlayerClass.Guide, totalLimit]
+      );
+
+      // Placing a trap should still succeed (different tool type)
+      const trapOutcome = await h.placement.place(h.player, h.page, {
+        toolType: ToolType.Trap,
+        isAnonymous: false
+      });
+      assert.ok(trapOutcome.placement, 'trap should place despite page full of doorways');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway limit trigger enforces via NI010: direct SQL insert of own-limit violation is rejected', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+      const limit = h.balance.doorwayPageOwnLimit(PlayerClass.Giver);
+      const pageId = h.page.id;
+      const playerId = h.player.id;
+
+      // Insert limit doorways directly via SQL
+      const result = await pool.query(
+        `INSERT INTO placement (page_id, placer_id, tool_type_id, placer_class_id, placer_level)
+         SELECT $1, $2, 4, $3, 1
+         FROM generate_series(1, $4)`,
+        [pageId, playerId, PlayerClass.Giver, limit]
+      );
+
+      // Try to insert one more directly (should fail at trigger level with NI010)
+      const failResult = await pool.query(
+        `INSERT INTO placement (page_id, placer_id, tool_type_id, placer_class_id, placer_level)
+         VALUES ($1, $2, 4, $3, 1)`,
+        [pageId, playerId, PlayerClass.Giver]
+      ).catch(e => e);
+
+      // Check both message (for visibility) and code (for reliability)
+      const hasNI010 = (failResult && failResult.code === 'NI010') ||
+                       (failResult && failResult.message && failResult.message.includes('NI010'));
+      assert.ok(hasNI010, `should fail with NI010 error code, got: ${failResult?.code || failResult?.message}`);
     } finally {
       await closeDb(pool);
     }

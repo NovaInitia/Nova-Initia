@@ -137,3 +137,17 @@ export class HtmlNotPermitted extends Error {
     this.name = 'HtmlNotPermitted';
   }
 }
+
+export class DoorwayPageOwnLimitReached extends Error {
+  constructor(playerId: string, pageId: string) {
+    super(`Doorway own limit reached for player ${playerId} on page ${pageId}`);
+    this.name = 'DoorwayPageOwnLimitReached';
+  }
+}
+
+export class DoorwayPageTotalLimitReached extends Error {
+  constructor(pageId: string) {
+    super(`Doorway total limit reached on page ${pageId}`);
+    this.name = 'DoorwayPageTotalLimitReached';
+  }
+}

@@ -770,3 +770,57 @@ ordering would be wrong.
 
 - **Continue?** Yes. Doorway page limits next — the last WF-5 completion — then `EncounterModule`,
   where placements finally do something to a visitor.
+
+---
+
+## Cycle 12 — 2026-08-18 — doorway page limits. **WF-5 complete.**
+
+- **Shipped:** migration `0005` adds `enforce_doorway_page_limits()`, the reference data for both
+  limits, two new balance methods, module-level enforcement of the per-player limit and a
+  page-level advisory lock. **339 tests, 0 fail, 0 skipped**, three identical runs, typecheck
+  clean, no `any` in `src/`, scenario green. **BRD-01 WF-5 now has no outstanding rules.**
+
+- **The rule the BRD stated ambiguously and `config.js` settled.** *"A page accepts at most 200
+  doorways in total; a single player may own at most 5 of them, except a guide, who may own up
+  to 200."* The Project Owner asked whether that governed **uses** or **placements** — a sharp
+  question, since doorways have charges. `config.js` answers it structurally: `pageLimits` sits
+  in the doorway block **beside** `charges`, so the design already separates the two concepts and
+  the ambiguity was only in the prose. It is a placement limit, and it does **not** supersede D16
+  — both apply, and for a giver the doorway limit of 5 is far stricter than D16's 250.
+
+- **Two distinct SQLSTATEs, deliberately.** The trigger enforces two different rules and the
+  caller must tell them apart, so it raises `NI010` for the per-player limit and `NI011` for the
+  page total rather than `check_violation` for both. Cycle 7 met this shape already —
+  `NegativeInventory` and `InventoryCapExceeded` both arrive as `23514` and are separated by
+  whether a `constraint` name is present — and the standing rule from that cycle is that message
+  text is not a stable interface. Custom codes make the distinction explicit instead of inferred.
+
+- **The one place an advisory lock genuinely earns its keep.** Cycle 9 established by mutation
+  that the per-player lock is redundant for D16: two concurrent placements by the same player
+  already serialise on the same `player_inventory` row. **`total` has no such shared row** — two
+  *different* players racing on one page touch different inventory rows, so nothing serialises
+  them and both can read 199. A page-level lock is the only thing that closes it. The same
+  technique that showed one lock was unnecessary is what identified where another was required.
+
+- **A contract the implementer was told to leave alone, and did.** `IPlacementRepository` has
+  `countOnPageBy(page, player, tool)` but nothing for "count by page across all players", which
+  is exactly what `total` needs. Rather than let a repository interface be widened by an
+  implementer, the spec required it to stop and report; `total` is therefore enforced **only** in
+  the trigger, with the module translating `NI011`. Verified: `contracts/repositories.ts` is
+  untouched.
+
+- **Mutation-checked, twice.** Flattening `doorwayPageOwnLimit` to a constant 5 fails the guide
+  test — so class-dependence is pinned, not incidental. Disabling the trigger fails exactly the
+  `total` test and the direct-SQL test while the `own` tests keep passing, which confirms the
+  intended layering: `own` is enforced in both the module and the database, `total` only in the
+  database.
+
+- **A test-design trap worth recording.** The `total` test fills a page to 200 doorways. If those
+  rows carried a *giver's* class, the per-player limit of 5 would refuse the next placement first
+  and the test would pass for entirely the wrong reason. The seeded rows are guides, whose own
+  limit is 200, so only the page total can be what refuses it. Specified in advance rather than
+  discovered afterwards.
+
+- **Continue?** Yes. `EncounterModule` next — the other half of the core loop, where placements
+  finally do something to a visitor, and where the still-open question of whether a trap can fail
+  to *fire* (as distinct from failing to place) has to be answered.

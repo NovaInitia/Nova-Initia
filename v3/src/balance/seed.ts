@@ -145,7 +145,11 @@ const classScalars: ClassScalarRow[] = [
 
   { playerClass: PlayerClass.Giver,    metric: 'trap_fail_chance', value: 0.05 },
   { playerClass: PlayerClass.Guardian, metric: 'trap_fail_chance', value: 0.05 },
-  { playerClass: PlayerClass.Guide,    metric: 'trap_fail_chance', value: 0.05 }
+  { playerClass: PlayerClass.Guide,    metric: 'trap_fail_chance', value: 0.05 },
+
+  { playerClass: PlayerClass.Giver,    metric: 'doorway_page_own_limit', value: 5 },
+  { playerClass: PlayerClass.Guardian, metric: 'doorway_page_own_limit', value: 5 },
+  { playerClass: PlayerClass.Guide,    metric: 'doorway_page_own_limit', value: 200 }
 ];
 
 const classLevelScalars: ClassLevelScalarRow[] = [
@@ -190,6 +194,7 @@ const constants: Record<string, number> = {
   doorway_transport_per_level: 0.002,
   doorway_pass_through_limit: 1,
   doorway_owner_pass_through_limit: 3,
+  doorway_page_total_limit: 200,
 
   starting_sg: 20,
   starting_karma: 50,

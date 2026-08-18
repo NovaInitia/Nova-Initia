@@ -174,6 +174,14 @@ export class StaticBalanceTable implements IBalanceTable {
     );
   }
 
+  doorwayPageOwnLimit(forClass: PlayerClass): number {
+    return this.classScalar(forClass, 'doorway_page_own_limit');
+  }
+
+  doorwayPageTotalLimit(): number {
+    return this.constant('doorway_page_total_limit');
+  }
+
   branchAllowance(playerClass: PlayerClass, level: number): number {
     return this.band(
       this.classLevelScalars.get(`${playerClass}:signpost_branches`),
