@@ -6,7 +6,7 @@ import type { PlayerId, PageId } from '../domain/ids.js';
 import type { Player } from '../domain/player.js';
 import type { Pool } from 'pg';
 import type { Page } from '../domain/geography.js';
-import type { PlacementSpec } from '../domain/placement.js';
+import type { PlacementSpec, BarrelSpec } from '../domain/placement.js';
 import type { DomainId } from '../domain/ids.js';
 import { DB_SKIP, freshDb, closeDb } from '../db/testDb.js';
 import { SEED_BALANCE } from '../balance/seed.js';
@@ -24,7 +24,14 @@ import { PgBarrelContentRepository } from '../repositories/PgBarrelContentReposi
 import { PgAdvisoryLock } from '../repositories/PgAdvisoryLock.js';
 import { Consumption } from '../repositories/Consumption.js';
 import { PgUnitOfWork } from '../repositories/PgUnitOfWork.js';
-import { AbilityLocked, PagePlacementCapReached, NegativeInventory } from '../domain/errors.js';
+import {
+  AbilityLocked,
+  PagePlacementCapReached,
+  NegativeInventory,
+  BarrelCapacityExceeded,
+  MessageTooLong,
+  HtmlNotPermitted
+} from '../domain/errors.js';
 import { PgDomainRepository } from '../repositories/PgDomainRepository.js';
 
 function makePage(id: PageId, domainId: DomainId): Page {
@@ -1168,6 +1175,52 @@ describe('PlacementModule.place — cycle 9 additions', { skip: DB_SKIP }, () =>
     }
   });
 
+  it('rolls back a write already made when the failure is not a SQL error', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver);
+
+      // The sibling atomicity test fails on a CHECK violation, which aborts the
+      // transaction -- and PostgreSQL then treats COMMIT as ROLLBACK, so that test would
+      // pass even against an application that never rolls back. This one fails on an
+      // *application* throw instead: adjust() raises NegativeInventory when its UPDATE
+      // matches zero rows, and a zero-row UPDATE is not a SQL error, so the transaction
+      // stays alive and only the application's own ROLLBACK can undo the barrel decrement
+      // that already succeeded.
+      await pool.query(
+        'DELETE FROM player_inventory WHERE player_id = $1 AND tool_type_id = $2',
+        [h.player.id, ToolType.Signpost]
+      );
+
+      const before = await h.inventoryRepo.get(h.player.id);
+      const barrelsBefore = before.counts.get(ToolType.Barrel);
+      assert.ok(barrelsBefore && barrelsBefore > 0, 'player must hold barrels to start');
+
+      await assert.rejects(
+        h.placement.stashBarrel(h.player, h.page, {
+          sgAmount: 0,
+          contents: new Map([[ToolType.Signpost, 1]])
+        }),
+        NegativeInventory
+      );
+
+      const after = await h.inventoryRepo.get(h.player.id);
+      assert.equal(
+        after.counts.get(ToolType.Barrel),
+        barrelsBefore,
+        'the barrel consumed before the failure must be rolled back'
+      );
+
+      const barrels = await pool.query(
+        'SELECT count(*)::int c FROM placement WHERE placer_id = $1 AND tool_type_id = $2',
+        [h.player.id, ToolType.Barrel]
+      );
+      assert.equal(barrels.rows[0].c, 0, 'no barrel row survives');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
   it('concurrent placements never exceed the D16 cap', async () => {
     const pool = await freshDb();
     try {
@@ -1205,6 +1258,643 @@ describe('PlacementModule.place — cycle 9 additions', { skip: DB_SKIP }, () =>
         [h.page.id, h.player.id, ToolType.Trap]
       );
       assert.equal(live.rows[0].c, cap, 'live count must never exceed the cap');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
+describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
+  it('giver stashes tools and sg: barrel row exists with right fields, inventory/sg reduced', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeBarrel = beforeInv.counts.get(ToolType.Barrel) || 0;
+      const beforeTrap = beforeInv.counts.get(ToolType.Trap) || 0;
+      const beforeSg = h.player.sg;
+
+      const spec: BarrelSpec = {
+        sgAmount: 50,
+        contents: new Map([[ToolType.Trap, 5]]),
+        insideMessage: 'inside msg',
+        outsideMessage: 'outside msg'
+      };
+
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+
+      // Verify barrel row exists with right values
+      assert.equal(result.toolType, ToolType.Barrel);
+      assert.equal(result.placerId, h.player.id);
+      assert.equal(result.pageId, h.page.id);
+      assert.equal(result.placerClass, PlayerClass.Giver);
+      assert.equal(result.placerLevel, 5);
+      assert.equal(result.sgAmount, 50);
+      assert.equal(result.insideMessage, 'inside msg');
+      assert.equal(result.outsideMessage, 'outside msg');
+      assert.equal(result.visitCount, 0);
+      assert.equal(result.durability, 1);
+      assert.equal(result.consumedAt, null);
+      assert.equal(result.consumptionCause, null);
+
+      // Verify contents are correct
+      assert.equal(result.contents.get(ToolType.Trap), 5);
+
+      // Verify it was persisted
+      const persisted = await h.placementRepo.get(result.id);
+      assert.ok(persisted);
+      assert.equal(persisted.toolType, ToolType.Barrel);
+
+      // Verify inventory reduced by barrel + contents
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterBarrel = afterInv.counts.get(ToolType.Barrel) || 0;
+      const afterTrap = afterInv.counts.get(ToolType.Trap) || 0;
+      assert.equal(beforeBarrel - afterBarrel, 1, 'one barrel consumed');
+      assert.equal(beforeTrap - afterTrap, 5, '5 traps consumed');
+
+      // Verify sg reduced and ledger entry exists
+      assert.ok(h.player.sg < beforeSg);
+      const ledger = await pool.query(
+        `SELECT cause_id FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'sg'
+         AND cause_id = (SELECT id FROM ledger_cause WHERE code = 'barrel_stash')`,
+        [h.player.id]
+      );
+      assert.equal(ledger.rows.length, 1, 'barrel_stash ledger entry exists');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('atomicity: partial failure leaves inventory, sg, placements unchanged', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+
+      // Manually deplete trap inventory to 3 so stash of 5 fails
+      const inv = await h.inventoryRepo.get(h.player.id);
+      const current = inv.counts.get(ToolType.Trap) || 0;
+      const tx = { id: 'deplete' };
+      await h.inventoryRepo.adjust(h.player.id, ToolType.Trap, -(current - 3), tx);
+
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeSg = h.player.sg;
+      const beforeBarrelCount = await pool.query(
+        `SELECT count(*)::int c FROM placement WHERE tool_type_id = $1 AND placer_id = $2`,
+        [ToolType.Barrel, h.player.id]
+      );
+
+      const spec: BarrelSpec = {
+        sgAmount: 50,
+        contents: new Map([[ToolType.Trap, 5]]),
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec);
+        assert.fail('Should have thrown NegativeInventory');
+      } catch (e) {
+        assert.ok(e instanceof NegativeInventory);
+      }
+
+      // Verify nothing changed
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      assert.deepEqual(beforeInv.counts, afterInv.counts, 'inventory unchanged');
+      assert.equal(beforeSg, h.player.sg, 'sg unchanged');
+
+      const afterBarrelCount = await pool.query(
+        `SELECT count(*)::int c FROM placement WHERE tool_type_id = $1 AND placer_id = $2`,
+        [ToolType.Barrel, h.player.id]
+      );
+      assert.equal(beforeBarrelCount.rows[0].c, afterBarrelCount.rows[0].c, 'no barrel created');
+
+      const barrelContents = await pool.query(
+        `SELECT count(*)::int c FROM barrel_content WHERE barrel_id IN
+         (SELECT id FROM placement WHERE tool_type_id = $1 AND placer_id = $2)`,
+        [ToolType.Barrel, h.player.id]
+      );
+      assert.equal(barrelContents.rows[0].c, 0, 'no barrel_content rows');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('capacity: guardian with limit 10 stashing 11 throws, 10 succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guardian, 5);
+
+      const spec11: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map([[ToolType.Trap, 11]])
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec11);
+        assert.fail('Should have thrown BarrelCapacityExceeded');
+      } catch (e) {
+        assert.ok(e instanceof BarrelCapacityExceeded);
+      }
+
+      // 10 should succeed
+      const spec10: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map([[ToolType.Trap, 10]])
+      };
+      const result = await h.placement.stashBarrel(h.player, h.page, spec10);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('capacity: giver limit 100 succeeds with 50', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map([[ToolType.Trap, 50]])
+      };
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('capacity: sg counts at 10 to 1, giver 5 tools + 50 sg fills exactly 100, succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+
+      // 5 tools + ceil(50/10) = 5 + 5 = 10 slots (well within giver capacity of 100)
+      const spec: BarrelSpec = {
+        sgAmount: 50,
+        contents: new Map([[ToolType.Trap, 5]])
+      };
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('capacity: sg counts at 10 to 1, guardian 5 tools + 51 sg exceeds 10, throws', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guardian, 5);
+
+      // 5 tools + ceil(51/10) = 5 + 6 = 11 slots > 10
+      const spec: BarrelSpec = {
+        sgAmount: 51,
+        contents: new Map([[ToolType.Trap, 5]])
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec);
+        assert.fail('Should have thrown BarrelCapacityExceeded');
+      } catch (e) {
+        assert.ok(e instanceof BarrelCapacityExceeded);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('gates: non-giver stashing sg throws AbilityLocked', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guardian, 5);
+
+      const spec: BarrelSpec = {
+        sgAmount: 10,
+        contents: new Map()
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec);
+        assert.fail('Should have thrown AbilityLocked');
+      } catch (e) {
+        assert.ok(e instanceof AbilityLocked);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('gates: level-1 giver setting outside message throws, level-5 succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 1);
+
+      const spec1: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        outsideMessage: 'msg'
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec1);
+        assert.fail('Should have thrown AbilityLocked');
+      } catch (e) {
+        assert.ok(e instanceof AbilityLocked);
+      }
+
+      // Level 5 should succeed
+      const h5 = await harness(pool, PlayerClass.Giver, 5);
+      const result = await h5.placement.stashBarrel(h5.player, h5.page, spec1);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('gates: inside message works for any class at level 1', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guardian, 1);
+
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        insideMessage: 'inside'
+      };
+
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('messages: 156 characters inside throws MessageTooLong, 155 succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+      const maxInside = h.balance.constant('barrel_inside_message_max');
+
+      const longMsg = 'x'.repeat(maxInside + 1);
+      const spec1: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        insideMessage: longMsg
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec1);
+        assert.fail('Should have thrown MessageTooLong');
+      } catch (e) {
+        assert.ok(e instanceof MessageTooLong);
+      }
+
+      // maxInside should succeed
+      const okMsg = 'x'.repeat(maxInside);
+      const spec2: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        insideMessage: okMsg
+      };
+      const result = await h.placement.stashBarrel(h.player, h.page, spec2);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('messages: 129 characters outside throws MessageTooLong, 128 succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+      const maxOutside = h.balance.constant('barrel_outside_message_max');
+
+      const longMsg = 'x'.repeat(maxOutside + 1);
+      const spec1: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        outsideMessage: longMsg
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec1);
+        assert.fail('Should have thrown MessageTooLong');
+      } catch (e) {
+        assert.ok(e instanceof MessageTooLong);
+      }
+
+      // maxOutside should succeed
+      const okMsg = 'x'.repeat(maxOutside);
+      const spec2: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        outsideMessage: okMsg
+      };
+      const result = await h.placement.stashBarrel(h.player, h.page, spec2);
+      assert.ok(result);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('HTML: message with <b> throws HtmlNotPermitted for inside', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        insideMessage: 'hello <b>world</b>'
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec);
+        assert.fail('Should have thrown HtmlNotPermitted');
+      } catch (e) {
+        assert.ok(e instanceof HtmlNotPermitted);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('HTML: message with <b> throws HtmlNotPermitted for outside', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 5);
+
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map(),
+        outsideMessage: 'hello <b>world</b>'
+      };
+
+      try {
+        await h.placement.stashBarrel(h.player, h.page, spec);
+        assert.fail('Should have thrown HtmlNotPermitted');
+      } catch (e) {
+        assert.ok(e instanceof HtmlNotPermitted);
+      }
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('fullness bonus: full barrel awards base + full bonus', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+      const capacity = h.balance.barrelCapacityFor(h.player.activeClass);
+      const baseXp = h.balance.initialXpFor(ToolType.Barrel);
+
+      // Fill to exactly capacity
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map([[ToolType.Trap, capacity]])
+      };
+
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(result);
+
+      const ledger = await pool.query(
+        `SELECT applied_delta FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp'
+         AND placement_id = $2 AND cause_id = (SELECT id FROM ledger_cause WHERE code = 'placement_reward')`,
+        [h.player.id, result.id]
+      );
+      assert.equal(ledger.rows.length, 1);
+      // At full capacity: base + floor(base * capacity / capacity) = base + base = 2 * base
+      assert.equal(ledger.rows[0].applied_delta, 2 * baseXp);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('fullness bonus: half-full barrel awards base + floor(half)', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+      const capacity = h.balance.barrelCapacityFor(h.player.activeClass);
+      const baseXp = h.balance.initialXpFor(ToolType.Barrel);
+      const halfCapacity = Math.floor(capacity / 2);
+
+      const spec: BarrelSpec = {
+        sgAmount: 0,
+        contents: new Map([[ToolType.Trap, halfCapacity]])
+      };
+
+      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(result);
+
+      const ledger = await pool.query(
+        `SELECT applied_delta FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp'
+         AND placement_id = $2 AND cause_id = (SELECT id FROM ledger_cause WHERE code = 'placement_reward')`,
+        [h.player.id, result.id]
+      );
+      assert.equal(ledger.rows.length, 1);
+      // At half capacity: base + floor(base * halfCapacity / capacity)
+      const expectedBonus = Math.floor(baseXp * halfCapacity / capacity);
+      assert.equal(ledger.rows[0].applied_delta, baseXp + expectedBonus);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
+describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
+  it('dismissing sets isDismissed and is visible through repo', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+
+      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+
+      await h.placement.dismiss(h.player, placement);
+
+      const interaction = await pool.query(
+        `SELECT is_dismissed FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h.player.id, placement.id]
+      );
+      assert.equal(interaction.rows.length, 1);
+      assert.equal(interaction.rows[0].is_dismissed, true);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('dismissing twice is idempotent — one row, still dismissed', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+
+      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+
+      await h.placement.dismiss(h.player, placement);
+      await h.placement.dismiss(h.player, placement);
+
+      const interactions = await pool.query(
+        `SELECT count(*)::int c FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h.player.id, placement.id]
+      );
+      assert.equal(interactions.rows[0].c, 1, 'exactly one row');
+
+      const interaction = await pool.query(
+        `SELECT is_dismissed FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h.player.id, placement.id]
+      );
+      assert.equal(interaction.rows[0].is_dismissed, true);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('existing interaction useCount and firstSeenAt survive dismissal', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+
+      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+
+      // Create an interaction with useCount = 5
+      await pool.query(
+        `INSERT INTO placement_interaction (player_id, placement_id, use_count, is_dismissed, first_seen_at)
+         VALUES ($1, $2, 5, false, now())`,
+        [h.player.id, placement.id]
+      );
+
+      const before = await pool.query(
+        `SELECT use_count, first_seen_at FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h.player.id, placement.id]
+      );
+
+      await h.placement.dismiss(h.player, placement);
+
+      const after = await pool.query(
+        `SELECT use_count, first_seen_at, is_dismissed FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h.player.id, placement.id]
+      );
+
+      assert.equal(after.rows[0].use_count, 5, 'useCount preserved');
+      assert.equal(
+        before.rows[0].first_seen_at.getTime(),
+        after.rows[0].first_seen_at.getTime(),
+        'firstSeenAt preserved'
+      );
+      assert.equal(after.rows[0].is_dismissed, true);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('dismissal by one player does not affect rows for another', async () => {
+    const pool = await freshDb();
+    try {
+      const h1 = await harness(pool, PlayerClass.Giver);
+      const playerId2 = randomUUID() as PlayerId;
+      const player2 = makePlayer(playerId2, PlayerClass.Guardian);
+
+      const tx = { id: 'setup' };
+      const playerRepo = new PgPlayerRepository(pool);
+      const progressRepo = new PgClassProgressRepository(pool);
+      await playerRepo.save(player2, tx);
+      for (const cls of [PlayerClass.Giver, PlayerClass.Guardian, PlayerClass.Guide]) {
+        await progressRepo.save({ playerId: playerId2, playerClass: cls, level: 20, experience: 0 }, tx);
+      }
+
+      const placement = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+
+      // Create interaction for both players
+      await pool.query(
+        `INSERT INTO placement_interaction (player_id, placement_id, use_count, is_dismissed, first_seen_at)
+         VALUES ($1, $2, 0, false, now()), ($3, $2, 0, false, now())`,
+        [h1.player.id, placement.id, playerId2]
+      );
+
+      await h1.placement.dismiss(h1.player, placement);
+
+      // Player 1's row should be dismissed
+      const row1 = await pool.query(
+        `SELECT is_dismissed FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [h1.player.id, placement.id]
+      );
+      assert.equal(row1.rows[0].is_dismissed, true);
+
+      // Player 2's row should NOT be dismissed
+      const row2 = await pool.query(
+        `SELECT is_dismissed FROM placement_interaction WHERE player_id = $1 AND placement_id = $2`,
+        [playerId2, placement.id]
+      );
+      assert.equal(row2.rows[0].is_dismissed, false);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('dismissed placement disappears from list with excludeDismissedFor', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+
+      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+
+      // Before dismissal, placement appears in the list
+      let list = await h.placementRepo.list(h.page.id, {
+        liveOnly: true,
+        excludeNsfw: false,
+        excludeDismissedFor: h.player.id
+      });
+      assert.ok(list.find(p => p.id === placement.id), 'placement visible before dismissal');
+
+      await h.placement.dismiss(h.player, placement);
+
+      // After dismissal, it disappears for that player
+      list = await h.placementRepo.list(h.page.id, {
+        liveOnly: true,
+        excludeNsfw: false,
+        excludeDismissedFor: h.player.id
+      });
+      assert.ok(!list.find(p => p.id === placement.id), 'placement hidden after dismissal');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('dismissed placement remains visible for other players', async () => {
+    const pool = await freshDb();
+    try {
+      const h1 = await harness(pool, PlayerClass.Giver);
+      const playerId2 = randomUUID() as PlayerId;
+      const player2 = makePlayer(playerId2, PlayerClass.Guardian);
+
+      const tx = { id: 'setup' };
+      const playerRepo = new PgPlayerRepository(pool);
+      const progressRepo = new PgClassProgressRepository(pool);
+      const inventoryRepo = new PgInventoryRepository(pool);
+      await playerRepo.save(player2, tx);
+      for (const cls of [PlayerClass.Giver, PlayerClass.Guardian, PlayerClass.Guide]) {
+        await progressRepo.save({ playerId: playerId2, playerClass: cls, level: 20, experience: 0 }, tx);
+      }
+      for (const tool of PLACEABLE_TOOL_TYPES) {
+        await inventoryRepo.adjust(playerId2, tool, 100, tx);
+      }
+
+      const placement = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+
+      await h1.placement.dismiss(h1.player, placement);
+
+      // Player 1 sees it dismissed
+      let list1 = await h1.placementRepo.list(h1.page.id, {
+        liveOnly: true,
+        excludeNsfw: false,
+        excludeDismissedFor: h1.player.id
+      });
+      assert.ok(!list1.find(p => p.id === placement.id), 'player 1: placement hidden');
+
+      // Player 2 sees it (no dismissal)
+      let list2 = await h1.placementRepo.list(h1.page.id, {
+        liveOnly: true,
+        excludeNsfw: false,
+        excludeDismissedFor: playerId2
+      });
+      assert.ok(list2.find(p => p.id === placement.id), 'player 2: placement visible');
     } finally {
       await closeDb(pool);
     }

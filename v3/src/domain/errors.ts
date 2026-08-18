@@ -116,3 +116,24 @@ export class PagePlacementCapReached extends Error {
     this.name = 'PagePlacementCapReached';
   }
 }
+
+export class BarrelCapacityExceeded extends Error {
+  constructor(slotsUsed: number, capacity: number) {
+    super(`Barrel capacity exceeded: ${slotsUsed} slots used, capacity is ${capacity}`);
+    this.name = 'BarrelCapacityExceeded';
+  }
+}
+
+export class MessageTooLong extends Error {
+  constructor(field: string, max: number) {
+    super(`Message field '${field}' exceeds maximum length of ${max}`);
+    this.name = 'MessageTooLong';
+  }
+}
+
+export class HtmlNotPermitted extends Error {
+  constructor(field: string) {
+    super(`HTML not permitted in message field '${field}'`);
+    this.name = 'HtmlNotPermitted';
+  }
+}

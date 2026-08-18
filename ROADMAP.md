@@ -8,12 +8,7 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **PlacementModule: barrel stashing and dismissal** (M2, parcel 6) — completes the module.
-   `stashBarrel` writes the barrel and **every item placed inside it** in one transaction
-   (TRD §8.2), honouring `barrel_tool_capacity`, the 155/128 message limits and the
-   `barrel_stash_sg` gate. `dismiss` writes a `placement_interaction` row.
-   `PgBarrelContentRepository` already exists and is tested; only the module methods remain.
-2. **Placement failure** (M2, WF-5 completion) — every placeable tool gains a failure chance;
+1. **Placement failure** (M2, WF-5 completion) — every placeable tool gains a failure chance;
    shields cannot fail because they are never placed. v1 defined the *consequences* of failure
    and never wired up the *decision*: `User::useTool($toolID, $fail)` takes `$fail` as a
    parameter. On failure a trap, barrel, doorway or signpost is consumed and still pays XP,
@@ -22,22 +17,22 @@ to second (CHARTER A1, Milestones).*
    superseding `class_scalar.trap_fail_chance`), an **injected random source** so tests are
    deterministic, and `place` returning a `PlacementOutcome` rather than a bare `Placement` —
    a failed placement has no placement row but the caller still must learn the tool was spent.
-3. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
+2. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
    (200 for a guide) and `total` 200 across **all** players on a page. Confirmed a *placement*
    limit, distinct from `charges`, which are the uses. `own` varies by class so it belongs in
    `class_scalar`; `total` is class-independent and belongs in `balance_constant`. `total` needs
    a new trigger — counting across every placer on a page is a shape no existing constraint has.
-4. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+3. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-5. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-6. **EconomyModule: purchase and level-up** (M3, parcel 8).
-7. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+4. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+5. **EconomyModule: purchase and level-up** (M3, parcel 8).
+6. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-8. **WorldModule: wandering spiders** (M3, parcel 9).
+7. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -97,6 +92,12 @@ to second (CHARTER A1, Milestones).*
   leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
   transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
   The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.
+- [cycle 10] **`stashBarrel` and `dismiss`** (M2, parcel 6) — completes `PlacementModule`.
+  320 tests. **Parcel 6 complete.** Barrel capacity counts sg at 10-to-1, messages refuse HTML
+  outright rather than sanitising, `durability` is 1 pending OPEN-8. Added a *discriminating*
+  atomicity test: the existing one passed even with `ROLLBACK` replaced by `COMMIT`, because
+  PostgreSQL treats `COMMIT` of an aborted transaction as a rollback — the new one fails on an
+  application-level throw, where only the application's own rollback can save it.
 - [cycle 9] **`PlacementModule.place`** (M2, parcel 6) — placement with inventory, level gates,
   the D16 cap, D17 snapshotting, initial XP and karma, plus `PgPlacementRepository` (five
   subtypes), interaction and barrel-content repositories, `PgAdvisoryLock` and `Consumption`.

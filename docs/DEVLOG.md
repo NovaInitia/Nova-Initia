@@ -667,3 +667,49 @@ ordering would be wrong.
 
 - **Continue?** Yes. `stashBarrel` and `dismiss` complete parcel 6, then `EncounterModule` — the
   other half of the core loop, where placements finally do something to a visitor.
+
+---
+
+## Cycle 10 — 2026-08-17 — barrel stashing and dismissal. **Parcel 6 complete.**
+
+- **Shipped:** `stashBarrel` (WF-9) and `dismiss` (Amendment D.1 / WF-18), completing
+  `PlacementModule`. **320 tests, 0 fail, 0 skipped**, three identical runs, typecheck clean,
+  no `any` in `src/`, scenario green. The implementer's report was accurate this time and its
+  five runs matched mine — worth recording after cycle 9.
+
+- **The mutation that could not fail, and the reason why.** The atomicity test — a stash that
+  fails partway must leave inventory, sg and placements untouched — passed with `ROLLBACK`
+  replaced by `COMMIT`. It is not a vacuous test; the mutation was invalid.
+  **PostgreSQL refuses to commit an aborted transaction:** once a statement fails, the
+  transaction is in an aborted state and `COMMIT` performs a rollback. The failure in that test
+  is a CHECK violation, so the database had already guaranteed the outcome and the application's
+  choice of verb was irrelevant.
+  Cycle 6's equivalent mutation *did* fail a test, because there the callback threw a plain JS
+  error and the transaction was still alive. Same mutation, opposite result, for a reason that
+  has nothing to do with the code under test.
+  **Lesson: a mutation only tests what it can actually change.** A green suite under mutation
+  means either the test is weak *or the mutation was a no-op*, and telling those apart requires
+  knowing what the platform guarantees underneath.
+
+- **Added the discriminating test.** The dangerous case for `stashBarrel` is an *application*
+  throw after a write has already succeeded, since the transaction stays alive and only the
+  application's own `ROLLBACK` can undo it. Cycle 9's inventory fix created exactly that shape:
+  a zero-row `UPDATE` raises `NegativeInventory` without any SQL error. The new test deletes a
+  tool's inventory row, stashes a barrel containing it, and asserts the barrel consumed *before*
+  the failure is rolled back. Verified both directions — green normally, red under the
+  `ROLLBACK` → `COMMIT` mutation. The original test is kept: it still pins the SQL-failure path.
+
+- **Design notes.** Barrel `durability` is **1**, commented in place: `config.js` defines
+  `reuseChance` as an empty list (OPEN-8), and 1 is the only value consistent with an undefined
+  reuse chance. HTML in barrel messages is refused bluntly — any `<` or `>` — rather than
+  sanitised, because stripping tags invites a bypass and needs escaping rules at every read
+  site, while refusing angle brackets in a short human note cannot be worked around.
+  sg counts against barrel capacity at 10-to-1 with `Math.ceil`, so a partial slot occupies one.
+
+- **`dismiss` preserves the shared record.** `placement_interaction` serves three purposes on
+  one row — pass-through limits, dismissal, rating eligibility — so the obvious upsert would
+  reset `useCount` and `firstSeenAt` and silently destroy two of them. A test sets `useCount`
+  first and asserts it survives.
+
+- **Continue?** Yes. Placement failure next (WF-5 completion), then the doorway page limits,
+  then `EncounterModule`.

@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { NotImplemented, AbilityLocked, PagePlacementCapReached } from '../domain/errors.js';
+import {
+  AbilityLocked,
+  PagePlacementCapReached,
+  BarrelCapacityExceeded,
+  MessageTooLong,
+  HtmlNotPermitted
+} from '../domain/errors.js';
 import { ProgressionModule } from './progression.js';
 import type { IUnitOfWork, IAdvisoryLock } from '../contracts/unitOfWork.js';
 import type { IBalanceTable } from '../contracts/balance.js';
@@ -213,34 +219,181 @@ export class PlacementModule {
     page: Page,
     spec: BarrelSpec
   ): Promise<BarrelPlacement> {
-    this.balance.barrelCapacityFor(actor.activeClass);
-    this.balance.levelGateFor('barrel_stash_sg');
-    await this.inventory.get(actor.id);
+    // Resolve the placer's level for the active class
+    const progress = await this.classProgress.get(actor.id, actor.activeClass);
+    if (!progress) {
+      throw new Error(`No progress for player ${actor.id} in class ${actor.activeClass}`);
+    }
+    const placerLevel = progress.level;
 
-    await this.unitOfWork.run(actor.id, async (tx) => {
-      await this.consumption.consumeFromInventory(tx, actor.id, 1, 1, 'placement_failed');
-      await this.placements.save({} as Placement, tx);
-      await this.barrelContents.save({} as never, spec.contents, tx);
+    // Check capacity first (decision 1a)
+    const capacity = this.balance.barrelCapacityFor(actor.activeClass);
+    const slotsUsed = Array.from(spec.contents.values()).reduce((sum, qty) => sum + qty, 0) +
+      Math.ceil(spec.sgAmount / 10);
+    if (slotsUsed > capacity) {
+      throw new BarrelCapacityExceeded(slotsUsed, capacity);
+    }
+
+    // Check gates (decision 1b)
+    if (spec.sgAmount > 0) {
+      const gate = this.balance.levelGateFor('barrel_stash_sg');
+      const playerCanUse = gate.playerClass === null || gate.playerClass === actor.activeClass;
+      if (!playerCanUse || placerLevel < gate.level) {
+        throw new AbilityLocked('barrel_stash_sg');
+      }
+    }
+
+    if (spec.insideMessage !== undefined && spec.insideMessage !== null) {
+      const gate = this.balance.levelGateFor('barrel_inside_message');
+      const playerCanUse = gate.playerClass === null || gate.playerClass === actor.activeClass;
+      if (!playerCanUse || placerLevel < gate.level) {
+        throw new AbilityLocked('barrel_inside_message');
+      }
+    }
+
+    if (spec.outsideMessage !== undefined && spec.outsideMessage !== null) {
+      const gate = this.balance.levelGateFor('barrel_outside_message');
+      const playerCanUse = gate.playerClass === null || gate.playerClass === actor.activeClass;
+      if (!playerCanUse || placerLevel < gate.level) {
+        throw new AbilityLocked('barrel_outside_message');
+      }
+    }
+
+    // Check message lengths and HTML (decision 1c)
+    const insideMax = this.balance.constant('barrel_inside_message_max');
+    const outsideMax = this.balance.constant('barrel_outside_message_max');
+
+    if (spec.insideMessage !== undefined && spec.insideMessage !== null) {
+      if (spec.insideMessage.length > insideMax) {
+        throw new MessageTooLong('insideMessage', insideMax);
+      }
+      if (spec.insideMessage.includes('<') || spec.insideMessage.includes('>')) {
+        throw new HtmlNotPermitted('insideMessage');
+      }
+    }
+
+    if (spec.outsideMessage !== undefined && spec.outsideMessage !== null) {
+      if (spec.outsideMessage.length > outsideMax) {
+        throw new MessageTooLong('outsideMessage', outsideMax);
+      }
+      if (spec.outsideMessage.includes('<') || spec.outsideMessage.includes('>')) {
+        throw new HtmlNotPermitted('outsideMessage');
+      }
+    }
+
+    // Everything inside one transaction (decision 1 intro)
+    return await this.unitOfWork.run(actor.id, async (tx) => {
+      // Decision 1d: Consume inventory for barrel and each tool inside
+      await this.consumption.consumeFromInventory(
+        tx,
+        actor.id,
+        ToolType.Barrel,
+        1,
+        'placement_failed'
+      );
+
+      for (const [toolType, quantity] of spec.contents.entries()) {
+        await this.consumption.consumeFromInventory(
+          tx,
+          actor.id,
+          toolType,
+          quantity,
+          'placement_failed'
+        );
+      }
+
+      // Decision 1e: Adjust sg
+      await this.progression.adjustSg(
+        tx,
+        actor,
+        -spec.sgAmount,
+        'barrel_stash',
+        null,
+        null
+      );
+
+      // Decision 1f: Create the barrel row
+      const placementId = randomUUID() as PlacementId;
+      const now = new Date();
+
+      const placement: BarrelPlacement = {
+        id: placementId,
+        toolType: ToolType.Barrel,
+        placerId: actor.id,
+        pageId: page.id,
+        placedAt: now,
+        placerClass: actor.activeClass,
+        placerLevel,
+        consumedAt: null,
+        consumptionCause: null,
+        sgAmount: spec.sgAmount,
+        insideMessage: spec.insideMessage ?? null,
+        outsideMessage: spec.outsideMessage ?? null,
+        visitCount: 0,
+        durability: 1, // Open-8: undefined reuse chance means used once, no recycling
+        contents: spec.contents,
+        useLimitFor: () => 0
+      };
+
+      await this.placements.save(placement, tx);
+
+      // Decision 1g: Save contents
+      await this.barrelContents.save(placementId, spec.contents, tx);
+
+      // Decision 1h: Award XP with fullness bonus
+      const baseXp = this.balance.initialXpFor(ToolType.Barrel);
+      const bonus = Math.floor(baseXp * slotsUsed / capacity);
+      const totalXp = baseXp + bonus;
+      // Award as single XP entry (base + bonus combined)
       await this.progression.awardXp(
         tx,
         actor,
         actor.activeClass,
-        this.balance.initialXpFor(1),
+        totalXp,
         'placement_reward',
-        null
+        placementId
       );
-      await this.progression.adjustKarma(tx, actor, 1, null);
-    });
 
-    void page;
-    throw new NotImplemented('PlacementModule.stashBarrel');
+      // Award karma (follows same pattern as place())
+      await this.progression.adjustKarma(tx, actor, ToolType.Barrel, placementId);
+
+      return placement;
+    });
   }
 
   async dismiss(actor: Player, placement: Placement): Promise<void> {
-    await this.interactions.get(actor.id, placement.id);
-    await this.unitOfWork.run(actor.id, async (tx) => {
-      await this.interactions.save({} as PlacementInteraction, tx);
+    return await this.unitOfWork.run(actor.id, async (tx) => {
+      // Get existing interaction if it exists (to preserve fields)
+      const existing = await this.interactions.get(actor.id, placement.id);
+
+      if (existing) {
+        // Preserve useCount, rating, ratedAt, firstSeenAt; update only isDismissed
+        const interaction: PlacementInteraction = {
+          playerId: existing.playerId,
+          placementId: existing.placementId,
+          useCount: existing.useCount,
+          isDismissed: true,
+          rating: existing.rating,
+          ratedAt: existing.ratedAt,
+          firstSeenAt: existing.firstSeenAt,
+          lastUsedAt: existing.lastUsedAt
+        };
+        await this.interactions.save(interaction, tx);
+      } else {
+        // Create new row with isDismissed = true
+        const now = new Date();
+        const interaction: PlacementInteraction = {
+          playerId: actor.id,
+          placementId: placement.id,
+          useCount: 0,
+          isDismissed: true,
+          rating: null,
+          ratedAt: null,
+          firstSeenAt: now,
+          lastUsedAt: null
+        };
+        await this.interactions.save(interaction, tx);
+      }
     });
-    throw new NotImplemented('PlacementModule.dismiss');
   }
 }
