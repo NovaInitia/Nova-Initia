@@ -13,6 +13,7 @@ export interface ToolTypeRow {
   readonly isConsumedOnTrigger: boolean;
   readonly baseCost: number;
   readonly initialXp: number;
+  readonly failChance: number;
 }
 
 export interface AbilityGateRow {
@@ -55,12 +56,12 @@ export interface BalanceSet {
 }
 
 const toolTypes: ToolTypeRow[] = [
-  { id: ToolType.Trap,     code: 'trap',     owningClass: PlayerClass.Giver,    karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: true,  baseCost: 1, initialXp: 5 },
-  { id: ToolType.Barrel,   code: 'barrel',   owningClass: PlayerClass.Giver,    karmaDelta:  1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 5 },
-  { id: ToolType.Spider,   code: 'spider',   owningClass: PlayerClass.Guardian, karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: true,  baseCost: 1, initialXp: 5 },
-  { id: ToolType.Shield,   code: 'shield',   owningClass: PlayerClass.Guardian, karmaDelta:  1, isPlaceable: false, isConsumedOnTrigger: false, baseCost: 1, initialXp: 0 },
-  { id: ToolType.Doorway,  code: 'doorway',  owningClass: PlayerClass.Guide,    karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 10 },
-  { id: ToolType.Signpost, code: 'signpost', owningClass: PlayerClass.Guide,    karmaDelta:  1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 10 }
+  { id: ToolType.Trap,     code: 'trap',     owningClass: PlayerClass.Giver,    karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: true,  baseCost: 1, initialXp: 5, failChance: 0.05 },
+  { id: ToolType.Barrel,   code: 'barrel',   owningClass: PlayerClass.Giver,    karmaDelta:  1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 5, failChance: 0.05 },
+  { id: ToolType.Spider,   code: 'spider',   owningClass: PlayerClass.Guardian, karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: true,  baseCost: 1, initialXp: 5, failChance: 0.05 },
+  { id: ToolType.Shield,   code: 'shield',   owningClass: PlayerClass.Guardian, karmaDelta:  1, isPlaceable: false, isConsumedOnTrigger: false, baseCost: 1, initialXp: 0, failChance: 0 },
+  { id: ToolType.Doorway,  code: 'doorway',  owningClass: PlayerClass.Guide,    karmaDelta: -1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 10, failChance: 0.05 },
+  { id: ToolType.Signpost, code: 'signpost', owningClass: PlayerClass.Guide,    karmaDelta:  1, isPlaceable: true,  isConsumedOnTrigger: false, baseCost: 1, initialXp: 10, failChance: 0.05 }
 ];
 
 const levels: LevelDefinition[] = [

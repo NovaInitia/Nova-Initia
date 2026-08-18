@@ -28,6 +28,7 @@ describe('reference data anti-drift', { skip: DB_SKIP }, () => {
         assert.equal(db.is_consumed_on_trigger, seed.isConsumedOnTrigger, `Tool ${i}: is_consumed_on_trigger mismatch`);
         assert.equal(db.base_cost, seed.baseCost, `Tool ${i}: base_cost mismatch`);
         assert.equal(db.initial_xp, seed.initialXp, `Tool ${i}: initial_xp mismatch`);
+        assert.equal(Number(db.fail_chance), seed.failChance, `Tool ${i}: fail_chance mismatch`);
       }
     } finally {
       await closeDb(pool);

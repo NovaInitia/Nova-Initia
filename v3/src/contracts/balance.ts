@@ -17,6 +17,7 @@ export interface IBalanceTable {
   levelGateFor(ability: GatedAbility): AbilityGate;
   trapDamageFor(ageMs: number): number;
   trapFailChance(forClass: PlayerClass): number;
+  failChanceFor(tool: ToolType): number;
   expertTrapBonus(karma: number, ageMs: number): number;
   spiderXpFor(ageMs: number): number;
   spiderDamageFor(ageMs: number): number;

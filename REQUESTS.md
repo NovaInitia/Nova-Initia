@@ -84,9 +84,18 @@ Checked at the start of every cycle.
   > silently — say the word if either is wrong:
   >
   > 1. **Karma follows XP.** v1's evidence covers inventory and XP but is silent on karma. I am
-  >    treating karma the same as XP: it moves for the four tools that are consumed on failure,
-  >    and not for spiders, which v1 spared entirely. The alternative — karma always moves
-  >    because the player *acted* — is defensible; it is just not what the surrounding code does.
+  >    treating karma the same as XP: it moves whenever the tool is consumed.
+  >
+  >    > **Superseded 2026-08-18 by the Project Owner: "failed tools should cost. Spiders should
+  >    > be lost on fail."** v1 spared spiders — it guarded them on `&& !$fail` while the other
+  >    > four had their decrement and XP outside that check. That asymmetry is overruled, so
+  >    > failure is now **uniform across all five placeable tools**: the tool is consumed, XP is
+  >    > awarded, karma moves. This is a deliberate divergence from v1, not a recovery of it,
+  >    > and it makes the implementation simpler — there is no spared set and no per-tool
+  >    > branching in the failure path at all.
+  >    >
+  >    > `stashBarrel` is unaffected: a failed stash still costs the barrel tool only, never the
+  >    > contents or sg, which never entered the barrel.
   > 2. **`place` stops returning a bare `Placement`.** A failed placement produces no placement
   >    row, yet the caller still needs to know the tool was consumed and XP paid. Returning
   >    `PlacementOutcome { placement, failed, toolConsumed, xpAwarded }` says that honestly.

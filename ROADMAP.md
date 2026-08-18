@@ -8,31 +8,22 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **Placement failure** (M2, WF-5 completion) — every placeable tool gains a failure chance;
-   shields cannot fail because they are never placed. v1 defined the *consequences* of failure
-   and never wired up the *decision*: `User::useTool($toolID, $fail)` takes `$fail` as a
-   parameter. On failure a trap, barrel, doorway or signpost is consumed and still pays XP,
-   while a spider is spared — v1 guarded those on `&& !$fail`.
-   Needs `tool_type.fail_chance` (migration `0004`, 0.05 everywhere and 0 for shield,
-   superseding `class_scalar.trap_fail_chance`), an **injected random source** so tests are
-   deterministic, and `place` returning a `PlacementOutcome` rather than a bare `Placement` —
-   a failed placement has no placement row but the caller still must learn the tool was spent.
-2. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
+1. **Doorway page limits** (M2, WF-5 completion) — `config.js` `pageLimits`: `own` 5 per player
    (200 for a guide) and `total` 200 across **all** players on a page. Confirmed a *placement*
    limit, distinct from `charges`, which are the uses. `own` varies by class so it belongs in
    `class_scalar`; `total` is class-independent and belongs in `balance_constant`. `total` needs
    a new trigger — counting across every placer on a page is a shape no existing constraint has.
-3. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
+2. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
    resolution as pure `TriggerOutcome`, shield absorption.
-4. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-5. **EconomyModule: purchase and level-up** (M3, parcel 8).
-6. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+3. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+4. **EconomyModule: purchase and level-up** (M3, parcel 8).
+5. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-7. **WorldModule: wandering spiders** (M3, parcel 9).
+6. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -92,6 +83,12 @@ to second (CHARTER A1, Milestones).*
   leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
   transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
   The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.
+- [cycle 11] **Placement failure** (M2, WF-5 completion) — migration `0004` adds
+  `tool_type.fail_chance`; `place` and `stashBarrel` return `PlacementOutcome`; randomness is
+  injected. 331 tests. Failure is **uniform across all five tools** by Owner decision, a
+  deliberate divergence from v1, which spared spiders. `trapFailChance` and its `class_scalar`
+  rows are untouched — whether a trap can fail to *fire* is a separate, still-open Encounter
+  question. A failed stash costs the barrel only, never the contents or sg.
 - [cycle 10] **`stashBarrel` and `dismiss`** (M2, parcel 6) — completes `PlacementModule`.
   320 tests. **Parcel 6 complete.** Barrel capacity counts sg at 10-to-1, messages refuse HTML
   outright rather than sanitising, `durability` is 1 pending OPEN-8. Added a *discriminating*

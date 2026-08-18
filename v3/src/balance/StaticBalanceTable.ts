@@ -109,6 +109,10 @@ export class StaticBalanceTable implements IBalanceTable {
     return this.classScalar(forClass, 'trap_fail_chance');
   }
 
+  failChanceFor(tool: ToolType): number {
+    return this.tool(tool).failChance;
+  }
+
   expertTrapBonus(karma: number, ageMs: number): number {
     if (karma > this.constant('expert_trap_karma_max')) return 0;
     return this.ageBand(ToolType.Trap, 'expert_bonus_dmg', ageMs);

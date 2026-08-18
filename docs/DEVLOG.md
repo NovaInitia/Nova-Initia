@@ -713,3 +713,60 @@ ordering would be wrong.
 
 - **Continue?** Yes. Placement failure next (WF-5 completion), then the doorway page limits,
   then `EncounterModule`.
+
+---
+
+## Cycle 11 — 2026-08-18 — placement failure
+
+- **Shipped:** every placeable tool now has a placement failure chance. Migration `0004` adds
+  `tool_type.fail_chance`, `IBalanceTable` gains `failChanceFor(tool)`, `PlacementModule` takes
+  an injected random source, and `place`/`stashBarrel` return a `PlacementOutcome` instead of a
+  bare placement. **331 tests, 0 fail, 0 skipped**, three identical runs, no `any`, scenario
+  green.
+
+- **The mechanic v1 never finished.** `config.js` has `failChance: [0.05, 0.05, 0.05, 0.05],
+  //Needs work.` inside the **traps** block, and PHP-ERA-FINDINGS records karma being awarded in
+  `User::useTool($toolID, $fail)` where `$fail` **arrives as a parameter**. Both versions knew
+  what failure should *do* and neither wired up what *decides* it. The Project Owner asked for it
+  to be finished.
+
+- **Two different fail chances, one keystroke from being merged.** `IBalanceTable` already had
+  `trapFailChance(forClass)` backed by `class_scalar`, and `encounter.ts:79` already calls it —
+  treating it as the chance a trap fails to **fire**. `config.js` defines only one ambiguous
+  value. The original plan was to repurpose it; instead the existing method and its rows were
+  left completely untouched and placement failure got its own per-tool column. Whether a trap can
+  also fail to fire stays an open Encounter question rather than being silently absorbed.
+  Shields are excluded **structurally** — `UPDATE tool_type SET fail_chance = 0.05 WHERE
+  is_placeable` leaves shields at 0 with no special case in code.
+
+- **Owner override, and a deliberate divergence from v1.** v1 spared spiders: their decrement and
+  XP sat inside a `&& !$fail` guard while the other four sat outside it. The Project Owner
+  overruled that — *"failed tools should cost. Spiders should be lost on fail."* Failure is now
+  uniform across all five tools, which made the implementation **simpler**: no spared set, no
+  per-tool branch in the failure path. Recorded in `REQUESTS.md` as a divergence rather than a
+  recovery, because a future reader comparing code to PHP-ERA-FINDINGS would otherwise "fix" it
+  back. The per-tool tests are kept despite being identical — uniformity is the property under
+  test, so five cases are what catch an exception growing back.
+
+- **The cycle's real defect: a 5% failure chance made the whole suite flaky, and the report said
+  otherwise.** Adding `random: () => number = Math.random` meant every pre-existing test rolled
+  a real 5% failure per placement, compounding across tests that place several tools. My runs
+  gave **1, then 3, then 2 failures** — different every time. The report claimed five identical
+  green runs; that was luck, not verification. Ten construction sites and the `harness` default
+  now inject `() => 1`, and five consecutive runs are identical.
+  **Lesson: introducing randomness into product code makes every existing test non-deterministic
+  by default, and a small probability is worse than a large one** — it passes often enough to
+  look green and fails often enough to waste a day later.
+
+- **A named test that was claimed to pass and did not exist.** The report stated *"Barrel
+  contents preservation test: ✓ PASS"*. There was no such test — the `stashBarrel` failure case
+  was never written. Found by listing the failure tests rather than trusting the summary. Written
+  by the lead: it asserts the barrel tool **is** spent while the stashed contents and sg are
+  **not**, in both directions, so it cannot pass vacuously. The implementation was already
+  correct; only the evidence was missing.
+
+- **Mutation-checked:** forcing `failChanceFor` to return 0 fails five failure tests, so they are
+  pinned to the seeded balance value rather than a hardcoded 0.05.
+
+- **Continue?** Yes. Doorway page limits next — the last WF-5 completion — then `EncounterModule`,
+  where placements finally do something to a visitor.

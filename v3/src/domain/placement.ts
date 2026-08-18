@@ -107,3 +107,10 @@ export interface BarrelSpec {
   readonly insideMessage?: string;
   readonly outsideMessage?: string;
 }
+
+export interface PlacementOutcome {
+  readonly placement: Placement | null;
+  readonly failed: boolean;
+  readonly toolConsumed: boolean;
+  readonly xpAwarded: number;
+}

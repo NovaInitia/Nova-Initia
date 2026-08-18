@@ -25,6 +25,7 @@ import type {
   Placement,
   PlacementInteraction,
   PlacementSpec,
+  PlacementOutcome,
   TrapPlacement,
   SpiderPlacement,
   DoorwayPlacement,
@@ -44,10 +45,11 @@ export class PlacementModule {
     private readonly balance: IBalanceTable,
     private readonly unitOfWork: IUnitOfWork,
     private readonly classProgress: IClassProgressRepository,
-    private readonly advisoryLock: IAdvisoryLock
+    private readonly advisoryLock: IAdvisoryLock,
+    private readonly random: () => number = Math.random
   ) {}
 
-  async place(actor: Player, page: Page, spec: PlacementSpec): Promise<Placement> {
+  async place(actor: Player, page: Page, spec: PlacementSpec): Promise<PlacementOutcome> {
     // Step 1: Resolve the placer's level for the active class
     const progress = await this.classProgress.get(actor.id, actor.activeClass);
     if (!progress) {
@@ -96,7 +98,11 @@ export class PlacementModule {
           throw new PagePlacementCapReached(spec.toolType, page.id);
         }
 
-        // Step 3c: Consume one from inventory
+        // Step 3c: Roll for failure
+        const failChance = this.balance.failChanceFor(spec.toolType);
+        const failed = this.random() < failChance;
+
+        // Step 3d: Consume from inventory
         await this.consumption.consumeFromInventory(
           tx,
           actor.id,
@@ -105,7 +111,34 @@ export class PlacementModule {
           'placement_failed'
         );
 
-        // Step 3d: Insert the placement
+        // If failed, skip placement insertion but XP and karma are still awarded
+        if (failed) {
+          // Award initial XP even on failure (with null placementId since no row was created)
+          const xpAmount = this.balance.initialXpFor(spec.toolType);
+          await this.progression.awardXp(
+            tx,
+            actor,
+            actor.activeClass,
+            xpAmount,
+            'placement_reward',
+            null
+          );
+
+          // Adjust karma even on failure (with null placementId)
+          await this.progression.adjustKarma(tx, actor, spec.toolType, null);
+
+          // Release the advisory lock before returning
+          await this.advisoryLock.release(lockKey);
+
+          return {
+            placement: null,
+            failed: true,
+            toolConsumed: true,
+            xpAwarded: xpAmount
+          };
+        }
+
+        // Step 3e: Insert the placement
         const placementId = randomUUID() as PlacementId;
         const now = new Date();
 
@@ -184,7 +217,7 @@ export class PlacementModule {
 
         await this.placements.save(placement, tx);
 
-        // Step 3e: Award initial XP
+        // Step 3f: Award initial XP
         const xpAmount = this.balance.initialXpFor(spec.toolType);
         await this.progression.awardXp(
           tx,
@@ -195,13 +228,18 @@ export class PlacementModule {
           placementId
         );
 
-        // Step 3f: Adjust karma
+        // Step 3g: Adjust karma
         await this.progression.adjustKarma(tx, actor, spec.toolType, placementId);
 
         // Release the advisory lock before returning
         await this.advisoryLock.release(lockKey);
 
-        return placement;
+        return {
+          placement,
+          failed: false,
+          toolConsumed: true,
+          xpAwarded: xpAmount
+        };
       } catch (err) {
         // If something failed, try to release the lock (best effort)
         try {
@@ -218,7 +256,7 @@ export class PlacementModule {
     actor: Player,
     page: Page,
     spec: BarrelSpec
-  ): Promise<BarrelPlacement> {
+  ): Promise<PlacementOutcome> {
     // Resolve the placer's level for the active class
     const progress = await this.classProgress.get(actor.id, actor.activeClass);
     if (!progress) {
@@ -283,7 +321,11 @@ export class PlacementModule {
 
     // Everything inside one transaction (decision 1 intro)
     return await this.unitOfWork.run(actor.id, async (tx) => {
-      // Decision 1d: Consume inventory for barrel and each tool inside
+      // Roll for failure
+      const failChance = this.balance.failChanceFor(ToolType.Barrel);
+      const failed = this.random() < failChance;
+
+      // Barrel tool is always consumed (even on failure)
       await this.consumption.consumeFromInventory(
         tx,
         actor.id,
@@ -292,6 +334,18 @@ export class PlacementModule {
         'placement_failed'
       );
 
+      // On failure, stashed contents and sg are not consumed
+      if (failed) {
+        const baseXp = this.balance.initialXpFor(ToolType.Barrel);
+        return {
+          placement: null,
+          failed: true,
+          toolConsumed: true,
+          xpAwarded: baseXp
+        };
+      }
+
+      // For stashed contents, only consumed on success
       for (const [toolType, quantity] of spec.contents.entries()) {
         await this.consumption.consumeFromInventory(
           tx,
@@ -302,7 +356,7 @@ export class PlacementModule {
         );
       }
 
-      // Decision 1e: Adjust sg
+      // Decision 1e: Adjust sg (only on success)
       await this.progression.adjustSg(
         tx,
         actor,
@@ -357,7 +411,12 @@ export class PlacementModule {
       // Award karma (follows same pattern as place())
       await this.progression.adjustKarma(tx, actor, ToolType.Barrel, placementId);
 
-      return placement;
+      return {
+        placement,
+        failed: false,
+        toolConsumed: true,
+        xpAwarded: totalXp
+      };
     });
   }
 

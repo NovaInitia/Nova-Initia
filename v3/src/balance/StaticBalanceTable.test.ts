@@ -340,3 +340,17 @@ describe('starting state — D22', () => {
     assert.ok(b.constant('starting_sg') < b.levelDefinition(2).sgCost);
   });
 });
+
+describe('placement failure chances', () => {
+  it('shields have zero fail chance and are never placed', () => {
+    assert.equal(b.failChanceFor(ToolType.Shield), 0);
+  });
+
+  it('all other tools have 0.05 fail chance', () => {
+    assert.equal(b.failChanceFor(ToolType.Trap), 0.05);
+    assert.equal(b.failChanceFor(ToolType.Barrel), 0.05);
+    assert.equal(b.failChanceFor(ToolType.Spider), 0.05);
+    assert.equal(b.failChanceFor(ToolType.Doorway), 0.05);
+    assert.equal(b.failChanceFor(ToolType.Signpost), 0.05);
+  });
+});

@@ -92,7 +92,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -151,8 +152,11 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         isAnonymous: false
       };
 
-      const result = await placement.place(player, page, spec);
+      const outcome = await placement.place(player, page, spec);
 
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      const result = outcome.placement;
       assert.equal(result.toolType, ToolType.Trap);
       assert.equal(result.placerId, playerId);
       assert.equal(result.pageId, pageId);
@@ -197,7 +201,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -255,8 +260,11 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         spiderVariant: 'wandering'
       };
 
-      const result = await placeModule.place(player, page, spec);
+      const outcome = await placeModule.place(player, page, spec);
 
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      const result = outcome.placement;
       // Narrow through the discriminated union rather than casting: `toolType` is the
       // discriminant, so this checks the shape instead of switching off checking.
       assert.equal(result.toolType, ToolType.Spider);
@@ -297,7 +305,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -396,7 +405,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -455,7 +465,9 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
       };
 
       // Place trap at level 1
-      const placedTrap = await placeModule.place(player, page, spec);
+      const trapOutcome = await placeModule.place(player, page, spec);
+      assert.ok(trapOutcome.placement);
+      const placedTrap = trapOutcome.placement;
       assert.equal(placedTrap.placerLevel, 1);
 
       // Raise player level to 5
@@ -501,7 +513,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -559,7 +572,9 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         isAnonymous: false
       };
 
-      const placed = await placeModule.place(player, page, spec);
+      const outcome = await placeModule.place(player, page, spec);
+      assert.ok(outcome.placement);
+      const placed = outcome.placement;
 
       const ledger = await ledgerRepo.listForPlayer(playerId, 100);
       const xpEntry = ledger.find(e => e.resourceKind === 'xp' && e.cause === 'placement_reward');
@@ -597,7 +612,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -711,7 +727,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -811,7 +828,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const domainId = randomUUID() as DomainId;
@@ -911,9 +929,10 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         );
         await inventoryRepo.adjust(playerId, ToolType.Trap, 10, tx);
 
-        const result = await placeModule.place(player, page, spec);
-        assert.ok(result);
-        assert.equal(result.toolType, ToolType.Trap);
+        const outcome = await placeModule.place(player, page, spec);
+        assert.ok(outcome.placement);
+        assert.equal(outcome.failed, false);
+        assert.equal(outcome.placement.toolType, ToolType.Trap);
       }
     } finally {
       await closeDb(pool);
@@ -947,7 +966,8 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         balance,
         unitOfWork,
         progressRepo,
-        advisoryLock
+        advisoryLock,
+        () => 1 // predates placement failure; asserts the success path
       );
 
       const playerId = randomUUID() as PlayerId;
@@ -1032,14 +1052,16 @@ describe('PlacementModule.place', { skip: DB_SKIP }, () => {
         toolType: ToolType.Spider,
         spiderVariant: 'standard'
       };
-      const result2 = await placeModule.place(player, page1, spec2);
-      assert.ok(result2);
-      assert.equal(result2.toolType, ToolType.Spider);
+      const outcome2 = await placeModule.place(player, page1, spec2);
+      assert.ok(outcome2.placement);
+      assert.equal(outcome2.failed, false);
+      assert.equal(outcome2.placement.toolType, ToolType.Spider);
 
       // Same tool, different page should succeed
-      const result3 = await placeModule.place(player, page2, spec);
-      assert.ok(result3);
-      assert.equal(result3.toolType, ToolType.Trap);
+      const outcome3 = await placeModule.place(player, page2, spec);
+      assert.ok(outcome3.placement);
+      assert.equal(outcome3.failed, false);
+      assert.equal(outcome3.placement.toolType, ToolType.Trap);
     } finally {
       await closeDb(pool);
     }
@@ -1061,7 +1083,10 @@ interface Harness {
 async function harness(
   pool: Pool,
   activeClass: PlayerClass = PlayerClass.Giver,
-  level = 20
+  level = 20,
+  // Never fails by default. Placement gained a 5% failure chance in cycle 11, and a
+  // real Math.random here would make every success-path test flaky at ~5% per placement.
+  random: () => number = () => 1
 ): Promise<Harness> {
   const domainRepo = new PgDomainRepository(pool);
   const pageRepo = new PgPageRepository(pool);
@@ -1079,7 +1104,7 @@ async function harness(
   const consumption = new Consumption(placementRepo, inventoryRepo);
   const placement = new PlacementModule(
     placementRepo, interactionRepo, contentRepo, inventoryRepo, consumption,
-    progression, balance, unitOfWork, progressRepo, advisoryLock
+    progression, balance, unitOfWork, progressRepo, advisoryLock, random
   );
 
   const playerId = randomUUID() as PlayerId;
@@ -1118,16 +1143,21 @@ describe('PlacementModule.place — cycle 9 additions', { skip: DB_SKIP }, () =>
     try {
       const h = await harness(pool, PlayerClass.Guide);
 
-      const doorway = await h.placement.place(h.player, h.page, {
+      const doorwayOutcome = await h.placement.place(h.player, h.page, {
         toolType: ToolType.Doorway,
         destinationUrl: 'https://example.com/there',
         isNsfw: false
       });
-      const signpost = await h.placement.place(h.player, h.page, {
+      assert.ok(doorwayOutcome.placement);
+      const doorway = doorwayOutcome.placement;
+
+      const signpostOutcome = await h.placement.place(h.player, h.page, {
         toolType: ToolType.Signpost,
         destinationUrl: 'https://example.com/that-way',
         isNsfw: false
       });
+      assert.ok(signpostOutcome.placement);
+      const signpost = signpostOutcome.placement;
 
       assert.equal(doorway.toolType, ToolType.Doorway);
       assert.equal(signpost.toolType, ToolType.Signpost);
@@ -1264,6 +1294,271 @@ describe('PlacementModule.place — cycle 9 additions', { skip: DB_SKIP }, () =>
   });
 });
 
+describe('PlacementModule.place — placement failure', { skip: DB_SKIP }, () => {
+  it('with random returning 1, never fails and is regression guard for return-type change', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 20, () => 1);
+
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      assert.equal(outcome.toolConsumed, true);
+      assert.equal(outcome.xpAwarded, h.balance.initialXpFor(ToolType.Trap));
+
+      // Verify placement row exists
+      const placement = await h.placementRepo.get(outcome.placement.id);
+      assert.ok(placement);
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('with random returning 0, trap always fails: no placement, inventory reduced, XP awarded, karma moved', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 20, () => 0);
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeTraps = beforeInv.counts.get(ToolType.Trap) || 0;
+      const beforeKarma = h.player.karma;
+
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.equal(outcome.failed, true);
+      assert.equal(outcome.placement, null);
+      assert.equal(outcome.toolConsumed, true);
+      assert.equal(outcome.xpAwarded, h.balance.initialXpFor(ToolType.Trap));
+
+      // Verify inventory reduced
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterTraps = afterInv.counts.get(ToolType.Trap) || 0;
+      assert.equal(beforeTraps - afterTraps, 1, 'trap consumed on failure');
+
+      // Verify XP ledger entry exists
+      const ledger = await pool.query(
+        `SELECT count(*)::int c FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp' AND cause_id = (SELECT id FROM ledger_cause WHERE code = 'placement_reward')`,
+        [h.player.id]
+      );
+      assert.equal(ledger.rows[0].c, 1, 'XP ledger entry created on failure');
+
+      // Verify karma moved (by exactly 1)
+      const afterKarma = h.player.karma;
+      assert.equal(Math.abs(afterKarma - beforeKarma), 1, 'karma moved by 1');
+
+      // Verify no placement row created
+      const placements = await h.placementRepo.list(h.page.id, { liveOnly: true, excludeNsfw: false });
+      assert.equal(placements.length, 0, 'no placement row created');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('spider on failure behaves like trap: consumed, XP awarded, karma moved', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guardian, 20, () => 0);
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeSpiders = beforeInv.counts.get(ToolType.Spider) || 0;
+      const beforeKarma = h.player.karma;
+
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Spider });
+      assert.equal(outcome.failed, true);
+      assert.equal(outcome.placement, null);
+      assert.equal(outcome.toolConsumed, true, 'spider consumed on failure');
+      assert.equal(outcome.xpAwarded, h.balance.initialXpFor(ToolType.Spider), 'XP awarded on spider failure');
+
+      // Verify inventory reduced
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterSpiders = afterInv.counts.get(ToolType.Spider) || 0;
+      assert.equal(beforeSpiders - afterSpiders, 1, 'spider consumed on failure');
+
+      // Verify XP ledger entry exists
+      const ledger = await pool.query(
+        `SELECT count(*)::int c FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp' AND cause_id = (SELECT id FROM ledger_cause WHERE code = 'placement_reward')`,
+        [h.player.id]
+      );
+      assert.equal(ledger.rows[0].c, 1, 'XP ledger entry created on spider failure');
+
+      // Verify karma moved (by exactly 1)
+      const afterKarma = h.player.karma;
+      assert.equal(Math.abs(afterKarma - beforeKarma), 1, 'karma moved by 1 on spider failure');
+
+      // Verify no placement row created
+      const placements = await h.placementRepo.list(h.page.id, { liveOnly: true, excludeNsfw: false });
+      assert.equal(placements.length, 0, 'no placement row created');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('doorway on failure behaves like trap: consumed, XP awarded, karma moved', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guide, 20, () => 0);
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeDoorways = beforeInv.counts.get(ToolType.Doorway) || 0;
+
+      const outcome = await h.placement.place(h.player, h.page, {
+        toolType: ToolType.Doorway,
+        destinationUrl: 'https://example.com'
+      });
+      assert.equal(outcome.failed, true);
+      assert.equal(outcome.placement, null);
+      assert.equal(outcome.toolConsumed, true);
+      assert.equal(outcome.xpAwarded, h.balance.initialXpFor(ToolType.Doorway));
+
+      // Verify inventory reduced
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterDoorways = afterInv.counts.get(ToolType.Doorway) || 0;
+      assert.equal(beforeDoorways - afterDoorways, 1, 'doorway consumed on failure');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('signpost on failure behaves like trap: consumed, XP awarded, karma moved', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Guide, 20, () => 0);
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeSignposts = beforeInv.counts.get(ToolType.Signpost) || 0;
+
+      const outcome = await h.placement.place(h.player, h.page, {
+        toolType: ToolType.Signpost,
+        destinationUrl: 'https://example.com'
+      });
+      assert.equal(outcome.failed, true);
+      assert.equal(outcome.placement, null);
+      assert.equal(outcome.toolConsumed, true);
+      assert.equal(outcome.xpAwarded, h.balance.initialXpFor(ToolType.Signpost));
+
+      // Verify inventory reduced
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterSignposts = afterInv.counts.get(ToolType.Signpost) || 0;
+      assert.equal(beforeSignposts - afterSignposts, 1, 'signpost consumed on failure');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('threshold: failChanceFor(trap)=0.05, random()=0.04 fails, random()=0.06 succeeds', async () => {
+    const pool = await freshDb();
+    try {
+      const h1 = await harness(pool, PlayerClass.Giver, 20, () => 0.04);
+      const trapFailChance = h1.balance.failChanceFor(ToolType.Trap);
+      assert.equal(trapFailChance, 0.05);
+
+      // random() = 0.04 is less than 0.05, so it fails
+      const failOutcome = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+      assert.equal(failOutcome.failed, true, 'random() < failChance should fail');
+
+      // random() = 0.06 is greater than 0.05, so it succeeds
+      const h2 = await harness(pool, PlayerClass.Giver, 20, () => 0.06);
+      const successOutcome = await h2.placement.place(h2.player, h2.page, { toolType: ToolType.Trap });
+      assert.equal(successOutcome.failed, false, 'random() >= failChance should succeed');
+      assert.ok(successOutcome.placement, 'placement should exist on success');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('shield has failChanceFor=0 and is never placeable', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool);
+      assert.equal(h.balance.failChanceFor(ToolType.Shield), 0);
+      // Shield is not in PLACEABLE_TOOL_TYPES, so place() can never be called with it
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('a failed stash costs the barrel only, never the contents or the sg', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 20, () => 0);
+
+      const before = await h.inventoryRepo.get(h.player.id);
+      const barrelsBefore = before.counts.get(ToolType.Barrel) ?? 0;
+      const trapsBefore = before.counts.get(ToolType.Trap) ?? 0;
+      const sgBefore = (
+        await pool.query('SELECT sg FROM player WHERE id = $1', [h.player.id])
+      ).rows[0].sg;
+
+      const outcome = await h.placement.stashBarrel(h.player, h.page, {
+        sgAmount: 10,
+        contents: new Map([[ToolType.Trap, 2]])
+      });
+
+      assert.equal(outcome.failed, true);
+      assert.equal(outcome.placement, null);
+      assert.equal(outcome.toolConsumed, true);
+
+      const after = await h.inventoryRepo.get(h.player.id);
+      assert.equal(
+        after.counts.get(ToolType.Barrel) ?? 0,
+        barrelsBefore - 1,
+        'the barrel tool itself is spent on a failed stash'
+      );
+      // The contents never entered the barrel, so confiscating them would punish the player
+      // far more harshly than losing the barrel — which is the whole point of this rule.
+      assert.equal(
+        after.counts.get(ToolType.Trap) ?? 0,
+        trapsBefore,
+        'stashed contents are not consumed by a failed stash'
+      );
+
+      const sgAfter = (
+        await pool.query('SELECT sg FROM player WHERE id = $1', [h.player.id])
+      ).rows[0].sg;
+      assert.equal(sgAfter, sgBefore, 'stashed sg is not consumed by a failed stash');
+
+      const barrels = await pool.query(
+        'SELECT count(*)::int c FROM placement WHERE placer_id = $1 AND tool_type_id = $2',
+        [h.player.id, ToolType.Barrel]
+      );
+      assert.equal(barrels.rows[0].c, 0, 'no barrel row is created');
+
+      const contents = await pool.query('SELECT count(*)::int c FROM barrel_content');
+      assert.equal(contents.rows[0].c, 0, 'no barrel_content rows are created');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+
+  it('gate checks and cap checks still throw, consuming nothing, even with random()=0', async () => {
+    const pool = await freshDb();
+    try {
+      const h = await harness(pool, PlayerClass.Giver, 20, () => 0);
+
+      // Reach cap
+      const cap = h.balance.pagePlacementCap();
+      await pool.query(
+        `INSERT INTO placement (id, tool_type_id, placer_id, page_id, placer_class_id, placer_level)
+         SELECT gen_random_uuid(), $1, $2, $3, $4, $5 FROM generate_series(1, $6)`,
+        [ToolType.Trap, h.player.id, h.page.id, PlayerClass.Giver, 1, cap]
+      );
+
+      const beforeInv = await h.inventoryRepo.get(h.player.id);
+      const beforeTraps = beforeInv.counts.get(ToolType.Trap) || 0;
+
+      // Should throw PagePlacementCapReached, consuming nothing, even with random()=0
+      try {
+        await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+        assert.fail('Should have thrown PagePlacementCapReached');
+      } catch (e) {
+        assert.ok(e instanceof PagePlacementCapReached);
+      }
+
+      // Verify inventory unchanged
+      const afterInv = await h.inventoryRepo.get(h.player.id);
+      const afterTraps = afterInv.counts.get(ToolType.Trap) || 0;
+      assert.equal(beforeTraps, afterTraps, 'inventory unchanged when placement is refused');
+    } finally {
+      await closeDb(pool);
+    }
+  });
+});
+
 describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
   it('giver stashes tools and sg: barrel row exists with right fields, inventory/sg reduced', async () => {
     const pool = await freshDb();
@@ -1281,7 +1576,11 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         outsideMessage: 'outside msg'
       };
 
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      const result = outcome.placement;
 
       // Verify barrel row exists with right values
       assert.equal(result.toolType, ToolType.Barrel);
@@ -1399,8 +1698,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         sgAmount: 0,
         contents: new Map([[ToolType.Trap, 10]])
       };
-      const result = await h.placement.stashBarrel(h.player, h.page, spec10);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec10);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1415,8 +1715,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         sgAmount: 0,
         contents: new Map([[ToolType.Trap, 50]])
       };
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1432,8 +1733,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         sgAmount: 50,
         contents: new Map([[ToolType.Trap, 5]])
       };
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1502,8 +1804,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
 
       // Level 5 should succeed
       const h5 = await harness(pool, PlayerClass.Giver, 5);
-      const result = await h5.placement.stashBarrel(h5.player, h5.page, spec1);
-      assert.ok(result);
+      const outcome = await h5.placement.stashBarrel(h5.player, h5.page, spec1);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1520,8 +1823,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         insideMessage: 'inside'
       };
 
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1554,8 +1858,9 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         contents: new Map(),
         insideMessage: okMsg
       };
-      const result = await h.placement.stashBarrel(h.player, h.page, spec2);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec2);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
     } finally {
       await closeDb(pool);
     }
@@ -1652,8 +1957,10 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         contents: new Map([[ToolType.Trap, capacity]])
       };
 
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      const result = outcome.placement;
 
       const ledger = await pool.query(
         `SELECT applied_delta FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp'
@@ -1681,8 +1988,10 @@ describe('PlacementModule.stashBarrel', { skip: DB_SKIP }, () => {
         contents: new Map([[ToolType.Trap, halfCapacity]])
       };
 
-      const result = await h.placement.stashBarrel(h.player, h.page, spec);
-      assert.ok(result);
+      const outcome = await h.placement.stashBarrel(h.player, h.page, spec);
+      assert.ok(outcome.placement);
+      assert.equal(outcome.failed, false);
+      const result = outcome.placement;
 
       const ledger = await pool.query(
         `SELECT applied_delta FROM resource_ledger WHERE player_id = $1 AND resource_kind = 'xp'
@@ -1705,7 +2014,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
     try {
       const h = await harness(pool);
 
-      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       await h.placement.dismiss(h.player, placement);
 
@@ -1725,7 +2036,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
     try {
       const h = await harness(pool);
 
-      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       await h.placement.dismiss(h.player, placement);
       await h.placement.dismiss(h.player, placement);
@@ -1751,7 +2064,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
     try {
       const h = await harness(pool);
 
-      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       // Create an interaction with useCount = 5
       await pool.query(
@@ -1799,7 +2114,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
         await progressRepo.save({ playerId: playerId2, playerClass: cls, level: 20, experience: 0 }, tx);
       }
 
-      const placement = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+      const outcome = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       // Create interaction for both players
       await pool.query(
@@ -1833,7 +2150,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
     try {
       const h = await harness(pool);
 
-      const placement = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      const outcome = await h.placement.place(h.player, h.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       // Before dismissal, placement appears in the list
       let list = await h.placementRepo.list(h.page.id, {
@@ -1876,7 +2195,9 @@ describe('PlacementModule.dismiss', { skip: DB_SKIP }, () => {
         await inventoryRepo.adjust(playerId2, tool, 100, tx);
       }
 
-      const placement = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+      const outcome = await h1.placement.place(h1.player, h1.page, { toolType: ToolType.Trap });
+      assert.ok(outcome.placement);
+      const placement = outcome.placement;
 
       await h1.placement.dismiss(h1.player, placement);
 
