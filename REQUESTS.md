@@ -126,6 +126,35 @@ Checked at the start of every cycle.
   > `config.js` requires the 2011 `express` eagerly. Restore without re-tracking via
   > `git archive 047c23d node_modules | tar -x`.
 
+- [X] **2026-08-18 — SUPERSEDED: the project now runs on the system cluster.** The Project Owner
+  made PostgreSQL a service that autostarts on reboot, and the `stephen` role now exists with
+  `createdb`. The private cluster on 5433 is retired.
+
+  > **The canonical connection is now:**
+  > ```
+  > export PGHOST=/var/run/postgresql   # the socket, not TCP -- see below
+  > export PGPORT=5432
+  > export PGUSER=stephen
+  > export PGDATABASE=nova_initia_test  # or nova_initia_dev
+  > ```
+  > `nova_initia_dev` and `nova_initia_test` were created on it and all five migrations applied.
+  > **339 tests pass, three identical runs, scenario green.**
+  >
+  > **`PGHOST` is not optional here, and the failure is misleading.** `psql` defaults to the unix
+  > socket and gets peer auth, so it "just works"; `pg` defaults to **TCP on localhost**, which
+  > the system cluster answers with scram. Omitting `PGHOST` therefore fails with
+  > `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string` — an error that reads
+  > like a missing credential when the real problem is the wrong transport. Point it at the
+  > socket directory and peer auth applies.
+  >
+  > **No superuser is needed.** The role has `createdb` but not `rolsuper`, and every migration
+  > still applies: `citext` is a *trusted* extension from PostgreSQL 13, so a database owner may
+  > create it. This is a better posture than the private cluster, which ran everything as
+  > superuser.
+  >
+  > The retired private cluster's data directory is `/home/stephen/.local/share/nova-initia-pg`.
+  > It holds nothing that is not reproducible from the migrations and can be deleted.
+
 - [X] **2026-08-06, cycle 1, restated and then RESOLVED cycle 4 — was blocking for M1.**
   PostgreSQL needs to be running and to have a role for `stephen`.
 
