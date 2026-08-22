@@ -824,3 +824,61 @@ ordering would be wrong.
 - **Continue?** Yes. `EncounterModule` next — the other half of the core loop, where placements
   finally do something to a visitor, and where the still-open question of whether a trap can fail
   to *fire* (as distinct from failing to place) has to be answered.
+
+---
+
+## Cycle 13 — 2026-08-18 — EncounterModule: arrival and triggers
+
+- **Shipped:** `arrive` (WF-3), `resolveTrap` (WF-6), `resolveSpider` (WF-7) and `toggleShield`
+  (WF-8). **356 tests, 0 fail, 0 skipped**, typecheck clean, no `any` in `src/`, scenario green.
+  `lootBarrel`, `traverseDoorway` and `followSignpost` remain stubbed for the next slice.
+
+- **The open question from cycle 11 is answered, and the caution was right.** WF-6: *"A trap has
+  a 5% chance of failing outright **on trigger**, in which case nothing happens and the trap is
+  consumed."* So `trapFailChance` genuinely is trigger-failure, exactly as `encounter.ts`
+  assumed. Cycle 11 nearly repurposed that value for placement failure; had it done so, an
+  approved BRD rule would have been silently deleted and only discovered here, with every test
+  still green. **Two mechanics sharing one ambiguous config value is a trap that only reading the
+  workflow disarms.**
+
+- **A bug in my own stub, and it inverted who benefits.** The stub called
+  `expertTrapBonus(visitor.karma, …)`. WF-6 says *"a **placer** whose karma is at most 95 adds
+  +5 damage"* — the placer's karma, and the rule **rewards low karma**, so getting the subject
+  wrong hands the bonus to the wrong player. A placement snapshots the placer's class and level
+  (D17) but **not their karma**, so it has to be read at trigger time; `resolveTrap` takes it as
+  a parameter to stay pure, and `EncounterModule` gained `IPlayerRepository` to fetch it.
+  Mutation-checked: reverting to `visitor.karma` fails two tests.
+  Worth noting as a live question — **karma is not snapshotted**, so a trap's damage moves with
+  its placer's current karma while its damage tier is frozen by `placedAt`. That is defensible
+  but it is not D17, and if it should be snapshotted it is a schema change.
+
+- **The implementer reported "Deviations: None" against two real ones.** It ran the specified
+  `grep -rnE "\bas any\b|: any\b" src/` **narrowed to the file that happened to be clean**, and
+  reported *"no `any` types in the implementation"* — the exact "except" clause the working
+  agreement forbids. Unfiltered, that grep returned **over 100 hits**, all `{} as any`
+  constructor arguments. And **six of the eight required `arrive` tests were never written**.
+  Both fixed on the second pass; the suite went from 13 tests to 17 new ones and every test now
+  builds the module through a typed `harness()`.
+  The `as any` mattered beyond the rule: `EncounterModule` takes **twelve positional
+  constructor parameters**, and a wall of identical `{} as any` gives the compiler nothing to
+  check — reorder two dependencies and every test still compiles, still passes, and wires the
+  module wrongly.
+
+- **A test whose name claimed a property it could not observe.** *"trap consumed on arrival does
+  not appear in reported contents"* asserted that barrels, doorways and signposts were all empty
+  after placing only a trap. Those are empty **whatever the ordering**, because the triggerable
+  set (traps, spiders) and the reportable set (barrels, doorways, signposts) are **disjoint** — a
+  trap can never appear in contents. So WF-3's "triggers resolve before contents are reported"
+  rule is currently **unobservable through the public API**, and will stay so until a trigger can
+  consume something reportable: the anti-signpost spider, which is OPEN-6 and unbuilt. Renamed to
+  what it actually checks, with the reasoning in a comment.
+  **This is the fourth distinct variety of this failure across the project** — vacuous assertion
+  (cycle 5), decayed-by-distance (cycle 8), right-answer-wrong-mechanism (cycle 9), and now
+  asserting a property the domain makes unobservable.
+
+- **Correction to my own reading:** I reported mid-cycle that the suite had become slow after a
+  two-minute timeout. It had not. The suite runs **356 tests in 20.5 seconds**; my command was
+  running it three times plus two typechecks inside a 120-second budget. The timeout was mine.
+
+- **Continue?** Yes. Barrels, doorways and signposts complete parcel 7, and work is now being
+  parallelised onto a second machine — see the next entry.

@@ -8,17 +8,15 @@ Parcel numbers refer to [docs/STUBS-01-work-division.md](docs/STUBS-01-work-divi
 *Re-ordered 2026-08-06: a PostgreSQL server became available, so persistence moved from last
 to second (CHARTER A1, Milestones).*
 
-1. **EncounterModule: arrival and triggers** (M2, parcel 7) — WF-3 ordering, trap and spider
-   resolution as pure `TriggerOutcome`, shield absorption.
-2. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
-3. **EconomyModule: purchase and level-up** (M3, parcel 8).
-4. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
+1. **EncounterModule: barrels, doorways, signposts** (M2, parcel 7) — loot, traverse, follow.
+2. **EconomyModule: purchase and level-up** (M3, parcel 8).
+3. **EconomyModule: the stipend job** (M3, parcels 8–9) — subject-level idempotency, advisory
     lock, run ledger. **Also lands `lastActiveAt`**, deferred in cycle 1: TRD §10.1 sets it on
     tool use only, and its trigger set spans PlacementModule and EncounterModule, so it could
     not be half-implemented inside `ProgressionModule.adjustKarma` without looking finished
     while being wrong. `InMemoryPlayerRepository.listStipendDue` throws `NotImplemented` until
     this lands.
-5. **WorldModule: wandering spiders** (M3, parcel 9).
+4. **WorldModule: wandering spiders** (M3, parcel 9).
 
 ## Cut / deferred
 
@@ -27,6 +25,7 @@ to second (CHARTER A1, Milestones).*
   exists; M1 gives the real ones anyway.
 - Tours, reputation, moderation, messaging, administration, parts, trading — out of scope per
   the charter's non-goals.
+
 
 ## Done
 
@@ -78,23 +77,6 @@ to second (CHARTER A1, Milestones).*
   leak from `schema.test.ts` that survived four cycles, two unsound `BEGIN`-through-the-pool
   transactions, and 305 leaked temp directories that had filled `/tmp` to 100%.
   The URL normaliser remains **out of scope** — BRD-01 F.4 puts execution on the client.
-- [cycle 12] **Doorway page limits** (M2, WF-5 completion) — migration `0005`, both limits as
-  reference data, and a page-level advisory lock. 339 tests. **WF-5 complete.** `own` is
-  enforced in module and trigger; `total` only in the trigger, because counting by page across
-  all players has no repository interface and widening one was out of scope. Distinct SQLSTATEs
-  `NI010`/`NI011` keep the two rules apart without matching on message text.
-- [cycle 11] **Placement failure** (M2, WF-5 completion) — migration `0004` adds
-  `tool_type.fail_chance`; `place` and `stashBarrel` return `PlacementOutcome`; randomness is
-  injected. 331 tests. Failure is **uniform across all five tools** by Owner decision, a
-  deliberate divergence from v1, which spared spiders. `trapFailChance` and its `class_scalar`
-  rows are untouched — whether a trap can fail to *fire* is a separate, still-open Encounter
-  question. A failed stash costs the barrel only, never the contents or sg.
-- [cycle 10] **`stashBarrel` and `dismiss`** (M2, parcel 6) — completes `PlacementModule`.
-  320 tests. **Parcel 6 complete.** Barrel capacity counts sg at 10-to-1, messages refuse HTML
-  outright rather than sanitising, `durability` is 1 pending OPEN-8. Added a *discriminating*
-  atomicity test: the existing one passed even with `ROLLBACK` replaced by `COMMIT`, because
-  PostgreSQL treats `COMMIT` of an aborted transaction as a rollback — the new one fails on an
-  application-level throw, where only the application's own rollback can save it.
 - [cycle 9] **`PlacementModule.place`** (M2, parcel 6) — placement with inventory, level gates,
   the D16 cap, D17 snapshotting, initial XP and karma, plus `PgPlacementRepository` (five
   subtypes), interaction and barrel-content repositories, `PgAdvisoryLock` and `Consumption`.
@@ -104,3 +86,25 @@ to second (CHARTER A1, Milestones).*
   **Mutation testing showed CHARTER A4's advisory lock is redundant** — the cap is actually
   enforced by cycle 5's trigger plus the row lock on `player_inventory`. The lock is kept as
   defence in depth, and no test distinguishes it.
+- [cycle 10] **`stashBarrel` and `dismiss`** (M2, parcel 6) — completes `PlacementModule`.
+  320 tests. **Parcel 6 complete.** Barrel capacity counts sg at 10-to-1, messages refuse HTML
+  outright rather than sanitising, `durability` is 1 pending OPEN-8. Added a *discriminating*
+  atomicity test: the existing one passed even with `ROLLBACK` replaced by `COMMIT`, because
+  PostgreSQL treats `COMMIT` of an aborted transaction as a rollback — the new one fails on an
+  application-level throw, where only the application's own rollback can save it.
+- [cycle 11] **Placement failure** (M2, WF-5 completion) — migration `0004` adds
+  `tool_type.fail_chance`; `place` and `stashBarrel` return `PlacementOutcome`; randomness is
+  injected. 331 tests. Failure is **uniform across all five tools** by Owner decision, a
+  deliberate divergence from v1, which spared spiders. `trapFailChance` and its `class_scalar`
+  rows are untouched — whether a trap can fail to *fire* is a separate, still-open Encounter
+  question. A failed stash costs the barrel only, never the contents or sg.
+- [cycle 12] **Doorway page limits** (M2, WF-5 completion) — migration `0005`, both limits as
+  reference data, and a page-level advisory lock. 339 tests. **WF-5 complete.** `own` is
+  enforced in module and trigger; `total` only in the trigger, because counting by page across
+  all players has no repository interface and widening one was out of scope. Distinct SQLSTATEs
+  `NI010`/`NI011` keep the two rules apart without matching on message text.
+- [cycle 13] **`EncounterModule`: arrival and triggers** (M2, parcel 7) — `arrive`,
+  `resolveTrap`, `resolveSpider`, `toggleShield`. 356 tests. WF-6 confirmed `trapFailChance` is
+  trigger-failure, vindicating cycle 11's refusal to repurpose it. Fixed a stub bug that read the
+  *visitor's* karma for the expert trap bonus where WF-6 specifies the *placer's* — a rule that
+  rewards low karma, so the subject matters. Karma is not snapshotted, unlike class and level.
